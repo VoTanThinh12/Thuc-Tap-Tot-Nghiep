@@ -3,23 +3,47 @@ const db = require('../config/database');
 class Booking {
   // Tạo đơn đặt sân mới
   static async create(bookingData) {
-    const { user_id, pitch_id, timeslot_id, booking_date, total_price } = bookingData;
+    const { 
+      user_id, 
+      pitch_id, 
+      timeslot_id, 
+      booking_date, 
+      start_time,
+      end_time,
+      total_price,
+      deposit_amount = 0,
+      customer_name,
+      customer_phone,
+      customer_email,
+      notes
+    } = bookingData;
     
     // Tạo mã booking ngẫu nhiên
     const booking_code = 'BK' + Date.now() + Math.floor(Math.random() * 1000);
     
     const query = `
-      INSERT INTO bookings (user_id, pitch_id, timeslot_id, booking_code, booking_date, total_price, status) 
-      VALUES (?, ?, ?, ?, ?, ?, 'pending')
+      INSERT INTO bookings (
+        booking_code, user_id, pitch_id, timeslot_id, booking_date, 
+        start_time, end_time, total_price, deposit_amount,
+        customer_name, customer_phone, customer_email, notes, status
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `;
     
     const [result] = await db.execute(query, [
+      booking_code,
       user_id, 
       pitch_id, 
       timeslot_id, 
-      booking_code, 
-      booking_date, 
-      total_price
+      booking_date,
+      start_time,
+      end_time,
+      total_price,
+      deposit_amount,
+      customer_name,
+      customer_phone,
+      customer_email,
+      notes
     ]);
     
     return { id: result.insertId, booking_code };
@@ -28,7 +52,9 @@ class Booking {
   // Lấy đơn đặt theo ID
   static async findById(id) {
     const query = `
-      SELECT b.*, u.name as customer_name, u.phone, p.name as pitch_name, 
+      SELECT b.*, 
+             u.full_name as user_name, u.phone as user_phone, u.email as user_email,
+             p.name as pitch_name, p.location, p.address,
              t.date, t.start_time, t.end_time
       FROM bookings b
       JOIN users u ON b.user_id = u.id
@@ -38,22 +64,6 @@ class Booking {
     `;
     
     const [rows] = await db.execute(query, [id]);
-    return rows[0];
-  }
-
-  // Lấy đơn đặt theo mã booking
-  static async findByCode(booking_code) {
-    const query = `
-      SELECT b.*, u.name as customer_name, p.name as pitch_name, 
-             t.date, t.start_time, t.end_time
-      FROM bookings b
-      JOIN users u ON b.user_id = u.id
-      JOIN pitches p ON b.pitch_id = p.id
-      JOIN timeslots t ON b.timeslot_id = t.id
-      WHERE b.booking_code = ?
-    `;
-    
-    const [rows] = await db.execute(query, [booking_code]);
     return rows[0];
   }
 
@@ -76,7 +86,9 @@ class Booking {
   // Lấy tất cả đơn đặt (cho admin)
   static async getAll() {
     const query = `
-      SELECT b.*, u.name as customer_name, u.phone, p.name as pitch_name, 
+      SELECT b.*, 
+             u.full_name as user_name, u.phone as user_phone,
+             p.name as pitch_name, p.location,
              t.date, t.start_time, t.end_time
       FROM bookings b
       JOIN users u ON b.user_id = u.id
@@ -96,9 +108,31 @@ class Booking {
   }
 
   // Hủy đơn đặt
-  static async cancel(id) {
-    const query = 'UPDATE bookings SET status = "cancelled" WHERE id = ?';
-    await db.execute(query, [id]);
+  static async cancel(id, cancellation_reason = null) {
+    const query = 'UPDATE bookings SET status = "cancelled", cancellation_reason = ? WHERE id = ?';
+    await db.execute(query, [cancellation_reason, id]);
+  }
+
+  // Thêm dịch vụ vào booking
+  static async addService(booking_id, service_id, quantity, price) {
+    const total = quantity * price;
+    const query = `
+      INSERT INTO booking_services (booking_id, service_id, quantity, price, total)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    await db.execute(query, [booking_id, service_id, quantity, price, total]);
+  }
+
+  // Lấy dịch vụ của booking
+  static async getServices(booking_id) {
+    const query = `
+      SELECT bs.*, s.name as service_name, s.unit
+      FROM booking_services bs
+      JOIN services s ON bs.service_id = s.id
+      WHERE bs.booking_id = ?
+    `;
+    const [rows] = await db.execute(query, [booking_id]);
+    return rows;
   }
 }
 

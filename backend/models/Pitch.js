@@ -3,19 +3,21 @@ const db = require('../config/database');
 class Pitch {
   // Tạo sân mới
   static async create(pitchData) {
-    const { name, type, location, price_per_hour, description, images, facilities } = pitchData;
+    const { name, type, location, address, description, capacity, price_per_hour, images, facilities } = pitchData;
     
     const query = `
-      INSERT INTO pitches (name, type, location, price_per_hour, description, images, facilities) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO pitches (name, type, location, address, description, capacity, price_per_hour, images, facilities) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const [result] = await db.execute(query, [
       name, 
       type, 
-      location, 
-      price_per_hour, 
+      location,
+      address,
       description,
+      capacity,
+      price_per_hour,
       JSON.stringify(images || []),
       JSON.stringify(facilities || [])
     ]);
@@ -31,8 +33,8 @@ class Pitch {
     // Parse JSON fields
     return rows.map(pitch => ({
       ...pitch,
-      images: JSON.parse(pitch.images),
-      facilities: JSON.parse(pitch.facilities)
+      images: JSON.parse(pitch.images || '[]'),
+      facilities: JSON.parse(pitch.facilities || '[]')
     }));
   }
 
@@ -44,8 +46,8 @@ class Pitch {
     if (rows[0]) {
       return {
         ...rows[0],
-        images: JSON.parse(rows[0].images),
-        facilities: JSON.parse(rows[0].facilities)
+        images: JSON.parse(rows[0].images || '[]'),
+        facilities: JSON.parse(rows[0].facilities || '[]')
       };
     }
     return null;
@@ -75,28 +77,41 @@ class Pitch {
     
     return rows.map(pitch => ({
       ...pitch,
-      images: JSON.parse(pitch.images),
-      facilities: JSON.parse(pitch.facilities)
+      images: JSON.parse(pitch.images || '[]'),
+      facilities: JSON.parse(pitch.facilities || '[]')
     }));
   }
 
   // Cập nhật sân
   static async update(id, pitchData) {
-    const { name, type, location, price_per_hour, description, status } = pitchData;
+    const { name, type, location, address, description, capacity, price_per_hour, status } = pitchData;
     
     const query = `
       UPDATE pitches 
-      SET name = ?, type = ?, location = ?, price_per_hour = ?, description = ?, status = ?
+      SET name = ?, type = ?, location = ?, address = ?, description = ?, capacity = ?, price_per_hour = ?, status = ?
       WHERE id = ?
     `;
     
-    await db.execute(query, [name, type, location, price_per_hour, description, status, id]);
+    await db.execute(query, [name, type, location, address, description, capacity, price_per_hour, status, id]);
   }
 
   // Xóa sân (soft delete)
   static async delete(id) {
     const query = 'UPDATE pitches SET status = "inactive" WHERE id = ?';
     await db.execute(query, [id]);
+  }
+
+  // Lấy đánh giá của sân
+  static async getReviews(pitch_id) {
+    const query = `
+      SELECT r.*, u.full_name as user_name 
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.pitch_id = ?
+      ORDER BY r.created_at DESC
+    `;
+    const [rows] = await db.execute(query, [pitch_id]);
+    return rows;
   }
 }
 
