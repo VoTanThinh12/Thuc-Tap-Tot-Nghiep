@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // Đăng ký
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { full_name, email, password, phone, address } = req.body;
 
     // Kiểm tra email đã tồn tại
     const existingUser = await User.findByEmail(email);
@@ -13,7 +13,7 @@ exports.register = async (req, res) => {
     }
 
     // Tạo user mới
-    const userId = await User.create({ name, email, password, phone });
+    const userId = await User.create({ full_name, email, password, phone, address });
 
     res.status(201).json({ 
       message: 'Đăng ký thành công', 
@@ -54,8 +54,9 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
-        name: user.name,
+        full_name: user.full_name,
         email: user.email,
+        phone: user.phone,
         role: user.role
       }
     });
@@ -70,6 +71,16 @@ exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     res.json({ user });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Cập nhật profile
+exports.updateProfile = async (req, res) => {
+  try {
+    await User.update(req.user.id, req.body);
+    res.json({ message: 'Cập nhật thông tin thành công' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }

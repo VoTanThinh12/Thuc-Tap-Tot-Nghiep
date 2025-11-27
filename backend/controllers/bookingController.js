@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Timeslot = require('../models/Timeslot');
+const User = require('../models/User');
 const db = require('../config/database');
 
 // Tạo đơn đặt sân
@@ -9,8 +10,19 @@ exports.createBooking = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { pitch_id, timeslot_id, booking_date, total_price } = req.body;
+    const { 
+      pitch_id, 
+      timeslot_id, 
+      booking_date, 
+      deposit_amount,
+      notes,
+      services // Mảng các dịch vụ: [{ service_id, quantity }]
+    } = req.body;
+    
     const user_id = req.user.id;
+
+    // Lấy thông tin user
+    const user = await User.findById(user_id);
 
     // Kiểm tra timeslot còn khả dụng không
     const [timeslots] = await connection.execute(
@@ -23,13 +35,70 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Khung giờ này đã được đặt' });
     }
 
+    const timeslot = timeslots[0];
+    let total_price = parseFloat(timeslot.price);
+
+    // Tính tiền dịch vụ nếu có
+    let servicesTotal = 0;
+    if (services && services.length > 0) {
+      for (const service of services) {
+        const [serviceRows] = await connection.execute(
+          'SELECT price FROM services WHERE id = ?',
+          [service.service_id]
+        );
+        if (serviceRows.length > 0) {
+          servicesTotal += parseFloat(serviceRows[0].price) * service.quantity;
+        }
+      }
+    }
+
+    total_price += servicesTotal;
+
     // Tạo booking
-    const bookingData = { user_id, pitch_id, timeslot_id, booking_date, total_price };
+    const booking_code = 'BK' + Date.now() + Math.floor(Math.random() * 1000);
     const [result] = await connection.execute(
-      `INSERT INTO bookings (user_id, pitch_id, timeslot_id, booking_code, booking_date, total_price, status) 
-       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [user_id, pitch_id, timeslot_id, 'BK' + Date.now(), booking_date, total_price]
+      `INSERT INTO bookings (
+        booking_code, user_id, pitch_id, timeslot_id, booking_date, 
+        start_time, end_time, total_price, deposit_amount,
+        customer_name, customer_phone, customer_email, notes, status
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        booking_code,
+        user_id, 
+        pitch_id, 
+        timeslot_id, 
+        booking_date,
+        timeslot.start_time,
+        timeslot.end_time,
+        total_price,
+        deposit_amount || 0,
+        user.full_name,
+        user.phone,
+        user.email,
+        notes
+      ]
     );
+
+    const booking_id = result.insertId;
+
+    // Thêm dịch vụ vào booking nếu có
+    if (services && services.length > 0) {
+      for (const service of services) {
+        const [serviceRows] = await connection.execute(
+          'SELECT price FROM services WHERE id = ?',
+          [service.service_id]
+        );
+        if (serviceRows.length > 0) {
+          const price = parseFloat(serviceRows[0].price);
+          const total = price * service.quantity;
+          await connection.execute(
+            'INSERT INTO booking_services (booking_id, service_id, quantity, price, total) VALUES (?, ?, ?, ?, ?)',
+            [booking_id, service.service_id, service.quantity, price, total]
+          );
+        }
+      }
+    }
 
     // Đánh dấu timeslot đã đặt
     await connection.execute(
@@ -41,10 +110,12 @@ exports.createBooking = async (req, res) => {
 
     res.status(201).json({ 
       message: 'Đặt sân thành công', 
-      bookingId: result.insertId 
+      bookingId: booking_id,
+      booking_code 
     });
   } catch (error) {
     await connection.rollback();
+    console.error(error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   } finally {
     connection.release();
@@ -56,6 +127,23 @@ exports.getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.getByUserId(req.user.id);
     res.json({ bookings });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Lấy chi tiết đơn đặt
+exports.getBookingDetail = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn đặt' });
+    }
+
+    // Lấy dịch vụ của booking
+    const services = await Booking.getServices(req.params.id);
+
+    res.json({ booking, services });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
@@ -89,6 +177,8 @@ exports.cancelBooking = async (req, res) => {
   try {
     await connection.beginTransaction();
 
+    const { cancellation_reason } = req.body;
+
     // Lấy thông tin booking
     const [bookings] = await connection.execute(
       'SELECT * FROM bookings WHERE id = ?',
@@ -101,8 +191,8 @@ exports.cancelBooking = async (req, res) => {
 
     // Hủy booking
     await connection.execute(
-      'UPDATE bookings SET status = "cancelled" WHERE id = ?',
-      [req.params.id]
+      'UPDATE bookings SET status = "cancelled", cancellation_reason = ? WHERE id = ?',
+      [cancellation_reason, req.params.id]
     );
 
     // Trả lại timeslot
