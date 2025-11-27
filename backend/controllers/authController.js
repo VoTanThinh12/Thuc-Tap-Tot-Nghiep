@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // Đăng ký
 exports.register = async (req, res) => {
   try {
-    const { full_name, email, password, phone, address } = req.body;
+    const { name, full_name, email, password, phone, address } = req.body;
 
     // Kiểm tra email đã tồn tại
     const existingUser = await User.findByEmail(email);
@@ -12,8 +12,16 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email đã được sử dụng' });
     }
 
-    // Tạo user mới
-    const userId = await User.create({ full_name, email, password, phone, address });
+    // Tạo user mới - xử lý cả name và full_name
+    const userData = {
+      full_name: full_name || name || 'User',
+      email,
+      password,
+      phone: phone || null,
+      address: address || null
+    };
+
+    const userId = await User.create(userData);
 
     res.status(201).json({ 
       message: 'Đăng ký thành công', 
@@ -54,6 +62,7 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
+        name: user.full_name,
         full_name: user.full_name,
         email: user.email,
         phone: user.phone,
@@ -70,7 +79,12 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    res.json({ user });
+    res.json({ 
+      user: {
+        ...user,
+        name: user.full_name // Thêm name để tương thích với frontend
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }

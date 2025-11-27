@@ -14,7 +14,15 @@ class User {
       VALUES (?, ?, ?, ?, ?, ?)
     `;
     
-    const [result] = await db.execute(query, [full_name, email, hashedPassword, phone, address, role]);
+    // Xử lý null values
+    const [result] = await db.execute(query, [
+      full_name || 'User', 
+      email, 
+      hashedPassword, 
+      phone || null, 
+      address || null, 
+      role
+    ]);
     return result.insertId;
   }
 
@@ -52,7 +60,13 @@ class User {
       SET full_name = ?, phone = ?, address = ?, avatar = ?
       WHERE id = ?
     `;
-    await db.execute(query, [full_name, phone, address, avatar, id]);
+    await db.execute(query, [
+      full_name || null, 
+      phone || null, 
+      address || null, 
+      avatar || null, 
+      id
+    ]);
   }
 }
 
