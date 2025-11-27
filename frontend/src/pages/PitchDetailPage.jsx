@@ -12,12 +12,19 @@ const PitchDetailPage = () => {
   const [pitch, setPitch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookingDate, setBookingDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [timeslots, setTimeslots] = useState([]);
+  const [selectedTimeslot, setSelectedTimeslot] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadPitchDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (bookingDate) {
+      loadAvailableTimeslots();
+    }
+  }, [bookingDate]);
 
   const loadPitchDetail = async () => {
     try {
@@ -30,6 +37,18 @@ const PitchDetailPage = () => {
     }
   };
 
+  const loadAvailableTimeslots = async () => {
+    // Mock data - trong thực tế cần gọi API lấy timeslots theo pitch_id và date
+    const mockTimeslots = [
+      { id: 1, start_time: '06:00', end_time: '07:00', price: 150000, is_available: true },
+      { id: 2, start_time: '07:00', end_time: '08:00', price: 150000, is_available: true },
+      { id: 3, start_time: '17:00', end_time: '18:00', price: 180000, is_available: true },
+      { id: 4, start_time: '18:00', end_time: '19:00', price: 180000, is_available: true },
+      { id: 5, start_time: '19:00', end_time: '20:00', price: 180000, is_available: false },
+    ];
+    setTimeslots(mockTimeslots);
+  };
+
   const handleBooking = async (e) => {
     e.preventDefault();
     
@@ -39,7 +58,7 @@ const PitchDetailPage = () => {
       return;
     }
 
-    if (!bookingDate || !selectedTime) {
+    if (!bookingDate || !selectedTimeslot) {
       toast.error('Vui lòng chọn ngày và giờ đặt sân');
       return;
     }
@@ -47,18 +66,22 @@ const PitchDetailPage = () => {
     setSubmitting(true);
 
     try {
-      // Tạm thời giả lập booking (cần tạo timeslot trước trong thực tế)
+      const timeslot = timeslots.find(t => t.id.toString() === selectedTimeslot);
+      
       const bookingData = {
-        pitch_id: pitch.id,
-        timeslot_id: 1, // Giả lập - cần logic tạo/chọn timeslot thực tế
+        pitch_id: parseInt(id),
+        timeslot_id: parseInt(selectedTimeslot),
         booking_date: bookingDate,
-        total_price: pitch.price_per_hour
+        deposit_amount: 0,
+        notes: '',
+        services: []
       };
 
-      await bookingAPI.create(bookingData);
+      const response = await bookingAPI.create(bookingData);
       toast.success('Đặt sân thành công!');
       navigate('/my-bookings');
     } catch (error) {
+      console.error('Booking error:', error);
       toast.error(error.response?.data?.message || 'Đặt sân thất bại');
     } finally {
       setSubmitting(false);
@@ -143,29 +166,29 @@ const PitchDetailPage = () => {
                   />
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Chọn giờ:</label>
-                  <select
-                    className="form-select"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Chọn khung giờ --</option>
-                    <option value="06:00">06:00 - 07:00</option>
-                    <option value="07:00">07:00 - 08:00</option>
-                    <option value="08:00">08:00 - 09:00</option>
-                    <option value="17:00">17:00 - 18:00</option>
-                    <option value="18:00">18:00 - 19:00</option>
-                    <option value="19:00">19:00 - 20:00</option>
-                    <option value="20:00">20:00 - 21:00</option>
-                  </select>
-                </div>
+                {bookingDate && timeslots.length > 0 && (
+                  <div className="mb-3">
+                    <label className="form-label">Chọn khung giờ:</label>
+                    <select
+                      className="form-select"
+                      value={selectedTimeslot}
+                      onChange={(e) => setSelectedTimeslot(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Chọn khung giờ --</option>
+                      {timeslots.filter(t => t.is_available).map((slot) => (
+                        <option key={slot.id} value={slot.id}>
+                          {slot.start_time} - {slot.end_time} ({slot.price.toLocaleString('vi-VN')}đ)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   className="btn btn-success w-100"
-                  disabled={submitting}
+                  disabled={submitting || !bookingDate || !selectedTimeslot}
                 >
                   {submitting ? 'Đang xử lý...' : 'Đặt sân ngay'}
                 </button>

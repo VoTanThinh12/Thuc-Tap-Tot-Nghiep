@@ -21,8 +21,18 @@ exports.createBooking = async (req, res) => {
     
     const user_id = req.user.id;
 
+    // Validate required fields
+    if (!pitch_id || !timeslot_id || !booking_date) {
+      await connection.rollback();
+      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+    }
+
     // Lấy thông tin user
     const user = await User.findById(user_id);
+    if (!user) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Không tìm thấy thông tin người dùng' });
+    }
 
     // Kiểm tra timeslot còn khả dụng không
     const [timeslots] = await connection.execute(
@@ -40,7 +50,7 @@ exports.createBooking = async (req, res) => {
 
     // Tính tiền dịch vụ nếu có
     let servicesTotal = 0;
-    if (services && services.length > 0) {
+    if (services && Array.isArray(services) && services.length > 0) {
       for (const service of services) {
         const [serviceRows] = await connection.execute(
           'SELECT price FROM services WHERE id = ?',
@@ -74,16 +84,16 @@ exports.createBooking = async (req, res) => {
         total_price,
         deposit_amount || 0,
         user.full_name,
-        user.phone,
+        user.phone || '',
         user.email,
-        notes
+        notes || null
       ]
     );
 
     const booking_id = result.insertId;
 
     // Thêm dịch vụ vào booking nếu có
-    if (services && services.length > 0) {
+    if (services && Array.isArray(services) && services.length > 0) {
       for (const service of services) {
         const [serviceRows] = await connection.execute(
           'SELECT price FROM services WHERE id = ?',
@@ -115,7 +125,7 @@ exports.createBooking = async (req, res) => {
     });
   } catch (error) {
     await connection.rollback();
-    console.error(error);
+    console.error('Booking Error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   } finally {
     connection.release();
@@ -186,13 +196,14 @@ exports.cancelBooking = async (req, res) => {
     );
 
     if (bookings.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: 'Không tìm thấy đơn đặt' });
     }
 
     // Hủy booking
     await connection.execute(
       'UPDATE bookings SET status = "cancelled", cancellation_reason = ? WHERE id = ?',
-      [cancellation_reason, req.params.id]
+      [cancellation_reason || null, req.params.id]
     );
 
     // Trả lại timeslot
