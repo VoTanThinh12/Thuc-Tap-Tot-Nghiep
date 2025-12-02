@@ -5,62 +5,56 @@ const db = require('../config/database');
 // Admin Login
 exports.adminLogin = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     // Validation
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' });
     }
 
-    // Tìm admin trong database
-    const [admins] = await db.query(
-      'SELECT * FROM admins WHERE username = ? OR email = ?',
-      [username, username]
+    // Tìm user với role admin
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE email = ? AND role = "admin"',
+      [email]
     );
 
-    if (admins.length === 0) {
+    if (users.length === 0) {
       return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng' });
     }
 
-    const admin = admins[0];
+    const user = users[0];
+
+    // Kiểm tra tài khoản có active không
+    if (!user.is_active) {
+      return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
+    }
 
     // Kiểm tra mật khẩu
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng' });
-    }
-
-    // Kiểm tra trạng thái admin
-    if (admin.status !== 'active') {
-      return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
     }
 
     // Tạo JWT token
     const token = jwt.sign(
       { 
-        adminId: admin.admin_id,
-        username: admin.username,
-        role: admin.role
+        userId: user.id,
+        email: user.email,
+        role: user.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
-    );
-
-    // Cập nhật last_login
-    await db.query(
-      'UPDATE admins SET last_login = NOW() WHERE admin_id = ?',
-      [admin.admin_id]
     );
 
     res.json({
       success: true,
       token,
       admin: {
-        id: admin.admin_id,
-        username: admin.username,
-        email: admin.email,
-        fullName: admin.full_name,
-        role: admin.role
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        phone: user.phone,
+        role: user.role
       }
     });
 
@@ -73,20 +67,20 @@ exports.adminLogin = async (req, res) => {
 // Get Admin Profile
 exports.getAdminProfile = async (req, res) => {
   try {
-    const adminId = req.admin.adminId;
+    const userId = req.admin.userId;
 
-    const [admins] = await db.query(
-      'SELECT admin_id, username, email, full_name, role, phone, created_at, last_login FROM admins WHERE admin_id = ?',
-      [adminId]
+    const [users] = await db.query(
+      'SELECT id, full_name, email, phone, role, avatar, created_at FROM users WHERE id = ? AND role = "admin"',
+      [userId]
     );
 
-    if (admins.length === 0) {
+    if (users.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy admin' });
     }
 
     res.json({
       success: true,
-      admin: admins[0]
+      admin: users[0]
     });
 
   } catch (error) {
@@ -98,7 +92,7 @@ exports.getAdminProfile = async (req, res) => {
 // Change Password
 exports.changePassword = async (req, res) => {
   try {
-    const adminId = req.admin.adminId;
+    const userId = req.admin.userId;
     const { oldPassword, newPassword } = req.body;
 
     // Validation
@@ -110,18 +104,18 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
     }
 
-    // Lấy thông tin admin
-    const [admins] = await db.query(
-      'SELECT password FROM admins WHERE admin_id = ?',
-      [adminId]
+    // Lấy thông tin user
+    const [users] = await db.query(
+      'SELECT password FROM users WHERE id = ? AND role = "admin"',
+      [userId]
     );
 
-    if (admins.length === 0) {
+    if (users.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy admin' });
     }
 
     // Kiểm tra mật khẩu cũ
-    const isPasswordValid = await bcrypt.compare(oldPassword, admins[0].password);
+    const isPasswordValid = await bcrypt.compare(oldPassword, users[0].password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Mật khẩu cũ không đúng' });
     }
@@ -131,8 +125,8 @@ exports.changePassword = async (req, res) => {
 
     // Cập nhật mật khẩu
     await db.query(
-      'UPDATE admins SET password = ? WHERE admin_id = ?',
-      [hashedPassword, adminId]
+      'UPDATE users SET password = ? WHERE id = ?',
+      [hashedPassword, userId]
     );
 
     res.json({

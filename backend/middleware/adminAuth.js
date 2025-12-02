@@ -13,7 +13,7 @@ module.exports = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Kiểm tra xem có phải admin không
-    if (!decoded.adminId) {
+    if (decoded.role !== 'admin') {
       return res.status(403).json({ message: 'Bạn không có quyền truy cập' });
     }
 

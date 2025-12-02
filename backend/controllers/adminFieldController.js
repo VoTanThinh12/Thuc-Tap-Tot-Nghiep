@@ -1,11 +1,11 @@
 const db = require('../config/database');
 
-// Get all fields
+// Get all fields (pitches)
 exports.getAllFields = async (req, res) => {
   try {
     const { search, status } = req.query;
     
-    let query = 'SELECT * FROM fields WHERE 1=1';
+    let query = 'SELECT * FROM pitches WHERE 1=1';
     let params = [];
 
     if (search) {
@@ -33,20 +33,21 @@ exports.getAllFields = async (req, res) => {
   }
 };
 
-// Create field
+// Create field (pitch)
 exports.createField = async (req, res) => {
   try {
-    const { name, location, type, price_per_hour, description, amenities } = req.body;
+    const { name, location, address, type, price_per_hour, description, capacity, facilities } = req.body;
 
-    if (!name || !location || !type || !price_per_hour) {
+    if (!name || !location || !address || !type || !price_per_hour || !capacity) {
       return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const images = req.files ? JSON.stringify(req.files.map(f => `/uploads/${f.filename}`)) : null;
+    const facilitiesJson = facilities ? JSON.stringify(JSON.parse(facilities)) : null;
 
     const [result] = await db.query(
-      'INSERT INTO fields (name, location, type, price_per_hour, description, amenities, image_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, "active")',
-      [name, location, type, price_per_hour, description, amenities, imageUrl]
+      'INSERT INTO pitches (name, location, address, type, price_per_hour, description, capacity, images, facilities, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "active")',
+      [name, location, address, type, price_per_hour, description, capacity, images, facilitiesJson]
     );
 
     res.status(201).json({
@@ -61,23 +62,27 @@ exports.createField = async (req, res) => {
   }
 };
 
-// Update field
+// Update field (pitch)
 exports.updateField = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location, type, price_per_hour, description, amenities, status } = req.body;
+    const { name, location, address, type, price_per_hour, description, capacity, facilities, status } = req.body;
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+    let query = 'UPDATE pitches SET name = ?, location = ?, address = ?, type = ?, price_per_hour = ?, description = ?, capacity = ?, status = ?';
+    let params = [name, location, address, type, price_per_hour, description, capacity, status];
 
-    let query = 'UPDATE fields SET name = ?, location = ?, type = ?, price_per_hour = ?, description = ?, amenities = ?, status = ?';
-    let params = [name, location, type, price_per_hour, description, amenities, status];
-
-    if (imageUrl) {
-      query += ', image_url = ?';
-      params.push(imageUrl);
+    if (facilities) {
+      query += ', facilities = ?';
+      params.push(JSON.stringify(JSON.parse(facilities)));
     }
 
-    query += ' WHERE field_id = ?';
+    if (req.files && req.files.length > 0) {
+      const images = JSON.stringify(req.files.map(f => `/uploads/${f.filename}`));
+      query += ', images = ?';
+      params.push(images);
+    }
+
+    query += ' WHERE id = ?';
     params.push(id);
 
     await db.query(query, params);
@@ -93,12 +98,12 @@ exports.updateField = async (req, res) => {
   }
 };
 
-// Delete field
+// Delete field (pitch)
 exports.deleteField = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await db.query('DELETE FROM fields WHERE field_id = ?', [id]);
+    await db.query('DELETE FROM pitches WHERE id = ?', [id]);
 
     res.json({
       success: true,

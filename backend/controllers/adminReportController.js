@@ -1,17 +1,17 @@
 const db = require('../config/database');
 
-// Get revenue by field
+// Get revenue by pitch
 exports.getRevenueByField = async (req, res) => {
   try {
     const [data] = await db.query(`
       SELECT 
-        f.name as field_name,
-        COUNT(b.booking_id) as total_bookings,
+        p.name as pitch_name,
+        COUNT(b.id) as total_bookings,
         SUM(b.total_price) as total_revenue,
-        ROUND((COUNT(b.booking_id) * 100.0 / (SELECT COUNT(*) FROM bookings)), 2) as usage_percentage
-      FROM fields f
-      LEFT JOIN bookings b ON f.field_id = b.field_id AND b.status IN ('confirmed', 'completed')
-      GROUP BY f.field_id
+        ROUND((COUNT(b.id) * 100.0 / (SELECT COUNT(*) FROM bookings)), 2) as usage_percentage
+      FROM pitches p
+      LEFT JOIN bookings b ON p.id = b.pitch_id AND b.status IN ('confirmed', 'completed')
+      GROUP BY p.id
       ORDER BY total_revenue DESC
     `);
 
@@ -59,12 +59,12 @@ exports.getTopCustomers = async (req, res) => {
       SELECT 
         u.full_name,
         u.email,
-        COUNT(b.booking_id) as total_bookings,
+        COUNT(b.id) as total_bookings,
         SUM(b.total_price) as total_spent
       FROM users u
-      JOIN bookings b ON u.user_id = b.user_id
+      JOIN bookings b ON u.id = b.user_id
       WHERE b.status IN ('confirmed', 'completed')
-      GROUP BY u.user_id
+      GROUP BY u.id
       ORDER BY total_spent DESC
       LIMIT 10
     `);

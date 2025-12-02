@@ -4,7 +4,7 @@ const db = require('../config/database');
 exports.getDashboardStats = async (req, res) => {
   try {
     // Tổng số sân bóng
-    const [fieldsCount] = await db.query('SELECT COUNT(*) as total FROM fields');
+    const [fieldsCount] = await db.query('SELECT COUNT(*) as total FROM pitches');
     
     // Đơn đặt hôm nay
     const [todayBookings] = await db.query(
@@ -24,15 +24,15 @@ exports.getDashboardStats = async (req, res) => {
     // Đơn đặt gần đây
     const [recentBookings] = await db.query(`
       SELECT 
-        b.booking_id,
+        b.id,
         b.booking_code,
         u.full_name as customer_name,
-        f.name as field_name,
+        p.name as pitch_name,
         b.start_time,
         b.status
       FROM bookings b
-      JOIN users u ON b.user_id = u.user_id
-      JOIN fields f ON b.field_id = f.field_id
+      JOIN users u ON b.user_id = u.id
+      JOIN pitches p ON b.pitch_id = p.id
       ORDER BY b.created_at DESC
       LIMIT 10
     `);

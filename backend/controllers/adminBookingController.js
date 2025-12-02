@@ -11,10 +11,10 @@ exports.getAllBookings = async (req, res) => {
         u.full_name as customer_name,
         u.email as customer_email,
         u.phone as customer_phone,
-        f.name as field_name
+        p.name as pitch_name
       FROM bookings b
-      JOIN users u ON b.user_id = u.user_id
-      JOIN fields f ON b.field_id = f.field_id
+      JOIN users u ON b.user_id = u.id
+      JOIN pitches p ON b.pitch_id = p.id
       WHERE 1=1
     `;
     let params = [];
@@ -84,7 +84,7 @@ exports.updateBookingStatus = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE bookings SET status = ? WHERE booking_id = ?',
+      'UPDATE bookings SET status = ? WHERE id = ?',
       [status, id]
     );
 
@@ -104,7 +104,7 @@ exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await db.query('DELETE FROM bookings WHERE booking_id = ?', [id]);
+    await db.query('DELETE FROM bookings WHERE id = ?', [id]);
 
     res.json({
       success: true,

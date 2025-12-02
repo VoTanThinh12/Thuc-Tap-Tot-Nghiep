@@ -8,10 +8,10 @@ exports.getAllCustomers = async (req, res) => {
     let query = `
       SELECT 
         u.*,
-        COUNT(DISTINCT b.booking_id) as total_bookings,
+        COUNT(DISTINCT b.id) as total_bookings,
         SUM(b.total_price) as total_spent
       FROM users u
-      LEFT JOIN bookings b ON u.user_id = b.user_id
+      LEFT JOIN bookings b ON u.id = b.user_id
       WHERE u.role = 'customer'
     `;
     let params = [];
@@ -21,7 +21,7 @@ exports.getAllCustomers = async (req, res) => {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    query += ' GROUP BY u.user_id ORDER BY u.created_at DESC';
+    query += ' GROUP BY u.id ORDER BY u.created_at DESC';
 
     const [customers] = await db.query(query, params);
 
@@ -77,7 +77,7 @@ exports.getCustomerDetail = async (req, res) => {
     const { id } = req.params;
 
     const [customers] = await db.query(
-      'SELECT user_id, full_name, email, phone, created_at FROM users WHERE user_id = ? AND role = "customer"',
+      'SELECT id, full_name, email, phone, created_at FROM users WHERE id = ? AND role = "customer"',
       [id]
     );
 
