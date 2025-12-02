@@ -10,6 +10,8 @@ import PitchDetailPage from './pages/PitchDetailPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -21,7 +23,7 @@ function App() {
       <Router>
         <div className="d-flex flex-column min-vh-100">
           <Header />
-          
+
           <main className="flex-grow-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -29,9 +31,11 @@ function App() {
               <Route path="/my-bookings" element={<MyBookingsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </main>
-          
+
           <Footer />
           <ToastContainer position="top-right" autoClose={3000} />
         </div>
