@@ -9,6 +9,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Route test
 app.get('/', (req, res) => {
@@ -39,7 +41,8 @@ app.get('/', (req, res) => {
       bookings: '/api/bookings',
       services: '/api/services',
       payments: '/api/payments',
-      reviews: '/api/reviews'
+      reviews: '/api/reviews',
+      admin: '/api/admin'
     }
   });
 });
