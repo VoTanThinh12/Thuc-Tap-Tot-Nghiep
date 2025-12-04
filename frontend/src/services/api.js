@@ -57,6 +57,9 @@ export const adminAPI = {
 
   // Fields
   getFields: (params) => api.get("/admin/fields", { params }),
+  createField: (data) => api.post("/admin/fields", data),
+  updateField: (id, data) => api.put(`/admin/fields/${id}`, data),
+  deleteField: (id) => api.delete(`/admin/fields/${id}`),
 
   // Bookings
   getBookings: (params) => api.get("/admin/bookings", { params }),
