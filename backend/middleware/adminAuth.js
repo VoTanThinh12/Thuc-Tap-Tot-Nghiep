@@ -1,30 +1,31 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const db = require("../config/database");
 
-module.exports = (req, res, next) => {
+const adminAuth = async (req, res, next) => {
   try {
-    // Lấy token từ header
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ message: 'Không tìm thấy token xác thực' });
+      return res.status(401).json({ message: "Chưa đăng nhập" });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Kiểm tra xem có phải admin không
-    if (decoded.role !== 'admin') {
-      return res.status(403).json({ message: 'Bạn không có quyền truy cập' });
+    // Kiểm tra trong bảng users với role = 'admin'
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE id = ? AND role = "admin" AND is_active = 1',
+      [decoded.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ message: "Không có quyền admin" });
     }
 
-    // Lưu thông tin admin vào request
-    req.admin = decoded;
+    req.user = users[0];
     next();
-
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token đã hết hạn' });
-    }
-    return res.status(401).json({ message: 'Token không hợp lệ' });
+    return res.status(401).json({ message: "Token không hợp lệ" });
   }
 };
+
+module.exports = adminAuth;

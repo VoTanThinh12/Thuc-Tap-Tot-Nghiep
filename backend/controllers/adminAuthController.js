@@ -1,141 +1,130 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const db = require("../config/database");
 
-// Admin Login
-exports.adminLogin = async (req, res) => {
+// Đăng nhập admin
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' });
-    }
-
-    // Tìm user với role admin
+    // Tìm user với role = 'admin'
     const [users] = await db.query(
-      'SELECT * FROM users WHERE email = ? AND role = "admin"',
+      "SELECT * FROM users WHERE email = ? AND is_active = 1",
       [email]
     );
 
     if (users.length === 0) {
-      return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng' });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
     const user = users[0];
 
-    // Kiểm tra tài khoản có active không
-    if (!user.is_active) {
-      return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
+    // Kiểm tra phải là admin
+    if (user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Tài khoản không có quyền admin" });
     }
 
     // Kiểm tra mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng' });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
-    // Tạo JWT token
+    // Tạo token
     const token = jwt.sign(
-      { 
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      success: true,
-      token,
-      admin: {
+      {
         id: user.id,
         email: user.email,
-        fullName: user.full_name,
-        phone: user.phone,
-        role: user.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
-
-// Get Admin Profile
-exports.getAdminProfile = async (req, res) => {
-  try {
-    const userId = req.admin.userId;
-
-    const [users] = await db.query(
-      'SELECT id, full_name, email, phone, role, avatar, created_at FROM users WHERE id = ? AND role = "admin"',
-      [userId]
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
     );
 
-    if (users.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy admin' });
-    }
-
     res.json({
-      success: true,
-      admin: users[0]
+      message: "Đăng nhập thành công",
+      token: token,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role,
+      },
     });
-
   } catch (error) {
-    console.error('Get admin profile error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Change Password
+// Lấy thông tin admin đang đăng nhập
+exports.getProfile = async (req, res) => {
+  try {
+    const user = req.user;
+    res.json({
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+// Cập nhật profile admin
+exports.updateProfile = async (req, res) => {
+  try {
+    const { full_name, phone } = req.body;
+    const userId = req.user.id;
+
+    await db.query("UPDATE users SET full_name = ?, phone = ? WHERE id = ?", [
+      full_name,
+      phone,
+      userId,
+    ]);
+
+    res.json({ message: "Cập nhật thông tin thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+// Đổi mật khẩu
 exports.changePassword = async (req, res) => {
   try {
-    const userId = req.admin.userId;
     const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
 
-    // Validation
-    if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
-    }
-
-    // Lấy thông tin user
-    const [users] = await db.query(
-      'SELECT password FROM users WHERE id = ? AND role = "admin"',
-      [userId]
-    );
-
-    if (users.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy admin' });
-    }
+    // Lấy user hiện tại
+    const [[user]] = await db.query("SELECT * FROM users WHERE id = ?", [
+      userId,
+    ]);
 
     // Kiểm tra mật khẩu cũ
-    const isPasswordValid = await bcrypt.compare(oldPassword, users[0].password);
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Mật khẩu cũ không đúng' });
+      return res.status(400).json({ message: "Mật khẩu cũ không đúng" });
     }
 
-    // Mã hóa mật khẩu mới
+    // Hash mật khẩu mới
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Cập nhật mật khẩu
-    await db.query(
-      'UPDATE users SET password = ? WHERE id = ?',
-      [hashedPassword, userId]
-    );
+    // Cập nhật
+    await db.query("UPDATE users SET password = ? WHERE id = ?", [
+      hashedPassword,
+      userId,
+    ]);
 
-    res.json({
-      success: true,
-      message: 'Đổi mật khẩu thành công'
-    });
-
+    res.json({ message: "Đổi mật khẩu thành công" });
   } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

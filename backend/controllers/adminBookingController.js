@@ -1,118 +1,60 @@
-const db = require('../config/database');
+const db = require("../config/database");
 
-// Get all bookings
+// Lấy tất cả bookings
 exports.getAllBookings = async (req, res) => {
   try {
-    const { search, status, date } = req.query;
-    
-    let query = `
+    const [bookings] = await db.query(`
       SELECT 
         b.*,
-        u.full_name as customer_name,
-        u.email as customer_email,
-        u.phone as customer_phone,
+        u.full_name as user_name,
         p.name as pitch_name
       FROM bookings b
-      JOIN users u ON b.user_id = u.id
-      JOIN pitches p ON b.pitch_id = p.id
-      WHERE 1=1
-    `;
-    let params = [];
-
-    if (search) {
-      query += ' AND (b.booking_code LIKE ? OR u.full_name LIKE ? OR u.email LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-    }
-
-    if (status && status !== 'Tất cả') {
-      query += ' AND b.status = ?';
-      params.push(status);
-    }
-
-    if (date) {
-      query += ' AND DATE(b.booking_date) = ?';
-      params.push(date);
-    }
-
-    query += ' ORDER BY b.created_at DESC';
-
-    const [bookings] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      bookings
-    });
-
-  } catch (error) {
-    console.error('Get all bookings error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
-
-// Get booking statistics
-exports.getBookingStats = async (req, res) => {
-  try {
-    const [stats] = await db.query(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
-      FROM bookings
+      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN pitches p ON b.pitch_id = p.id
+      ORDER BY b.created_at DESC
     `);
 
-    res.json({
-      success: true,
-      stats: stats[0]
-    });
-
+    res.json(bookings);
   } catch (error) {
-    console.error('Get booking stats error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Update booking status
+// Cập nhật trạng thái booking
 exports.updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) {
-      return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
-    }
+    await db.query("UPDATE bookings SET status = ? WHERE id = ?", [status, id]);
 
-    await db.query(
-      'UPDATE bookings SET status = ? WHERE id = ?',
-      [status, id]
-    );
-
-    res.json({
-      success: true,
-      message: 'Cập nhật trạng thái thành công'
-    });
-
+    res.json({ message: "Cập nhật trạng thái thành công" });
   } catch (error) {
-    console.error('Update booking status error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Delete booking
-exports.deleteBooking = async (req, res) => {
+// Lấy chi tiết booking
+exports.getBookingDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await db.query('DELETE FROM bookings WHERE id = ?', [id]);
+    const [[booking]] = await db.query(
+      `
+      SELECT 
+        b.*,
+        u.full_name, u.email, u.phone as user_phone,
+        p.name as pitch_name, p.type, p.location
+      FROM bookings b
+      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN pitches p ON b.pitch_id = p.id
+      WHERE b.id = ?
+    `,
+      [id]
+    );
 
-    res.json({
-      success: true,
-      message: 'Xóa đơn đặt thành công'
-    });
-
+    res.json(booking);
   } catch (error) {
-    console.error('Delete booking error:', error);
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

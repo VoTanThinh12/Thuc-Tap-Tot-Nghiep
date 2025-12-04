@@ -1,98 +1,57 @@
 const db = require("../config/database");
 
-// Get all services
+// Lấy danh sách dịch vụ
 exports.getAllServices = async (req, res) => {
   try {
-    const { search, category } = req.query;
-
-    let query = "SELECT * FROM services WHERE 1=1";
-    let params = [];
-
-    if (search) {
-      query += " AND (name LIKE ? OR description LIKE ?)";
-      params.push(`%${search}%`, `%${search}%`);
-    }
-
-    if (category && category !== "Tất cả") {
-      query += " AND category = ?";
-      params.push(category);
-    }
-
-    query += " ORDER BY created_at DESC";
-
-    const [services] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      services,
-    });
+    const [services] = await db.query(
+      "SELECT * FROM services ORDER BY created_at DESC"
+    );
+    res.json(services);
   } catch (error) {
-    console.error("Get all services error:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Create service
+// Tạo dịch vụ
 exports.createService = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
-
-    if (!name || !price || !category) {
-      return res
-        .status(400)
-        .json({ message: "Vui lòng nhập đầy đủ thông tin" });
-    }
+    const { name, description, price, unit, category } = req.body;
 
     const [result] = await db.query(
-      'INSERT INTO services (name, description, price, category, status) VALUES (?, ?, ?, ?, "active")',
-      [name, description, price, category]
+      "INSERT INTO services (name, description, price, unit, category) VALUES (?, ?, ?, ?, ?)",
+      [name, description, price, unit, category]
     );
 
-    res.status(201).json({
-      success: true,
-      message: "Tạo dịch vụ thành công",
-      serviceId: result.insertId,
-    });
+    res.json({ message: "Tạo dịch vụ thành công", id: result.insertId });
   } catch (error) {
-    console.error("Create service error:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Update service
+// Cập nhật dịch vụ
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category, status } = req.body;
+    const { name, description, price, unit, category, status } = req.body;
 
     await db.query(
-      "UPDATE services SET name = ?, description = ?, price = ?, category = ?, status = ? WHERE id = ?",
-      [name, description, price, category, status, id]
+      "UPDATE services SET name=?, description=?, price=?, unit=?, category=?, status=? WHERE id=?",
+      [name, description, price, unit, category, status, id]
     );
 
-    res.json({
-      success: true,
-      message: "Cập nhật dịch vụ thành công",
-    });
+    res.json({ message: "Cập nhật thành công" });
   } catch (error) {
-    console.error("Update service error:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-// Delete service
+// Xóa dịch vụ
 exports.deleteService = async (req, res) => {
   try {
     const { id } = req.params;
-
     await db.query("DELETE FROM services WHERE id = ?", [id]);
-
-    res.json({
-      success: true,
-      message: "Xóa dịch vụ thành công",
-    });
+    res.json({ message: "Xóa thành công" });
   } catch (error) {
-    console.error("Delete service error:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
