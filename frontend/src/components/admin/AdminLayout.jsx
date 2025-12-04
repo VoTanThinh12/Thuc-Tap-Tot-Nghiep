@@ -1,30 +1,32 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import './AdminLayout.css';
+import React, { useState, useContext } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import "./AdminLayout.css";
 
 function AdminLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin/login');
+    logout();
+    navigate("/login");
   };
 
   const menuItems = [
-    { path: '/admin/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/admin/fields', icon: '⚽', label: 'Quản lý sân' },
-    { path: '/admin/bookings', icon: '📅', label: 'Đơn đặt sân' },
-    { path: '/admin/customers', icon: '👥', label: 'Khách hàng' },
-    { path: '/admin/services', icon: '⚙️', label: 'Dịch vụ' },
-    { path: '/admin/reports', icon: '📈', label: 'Báo cáo' },
-    { path: '/admin/settings', icon: '⚙️', label: 'Cài đặt' }
+    { path: "/admin/dashboard", icon: "📊", label: "Dashboard" },
+    { path: "/admin/fields", icon: "⚽", label: "Quản lý sân" },
+    { path: "/admin/bookings", icon: "📅", label: "Đơn đặt sân" },
+    { path: "/admin/customers", icon: "👥", label: "Khách hàng" },
+    { path: "/admin/services", icon: "⚙️", label: "Dịch vụ" },
+    { path: "/admin/reports", icon: "📈", label: "Báo cáo" },
+    { path: "/admin/settings", icon: "⚙️", label: "Cài đặt" },
   ];
 
   return (
     <div className="admin-layout">
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+      <aside className={`admin-sidebar ${sidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <span className="logo-icon">⚽</span>
@@ -37,7 +39,9 @@ function AdminLayout({ children }) {
             <Link
               key={item.path}
               to={item.path}
-              className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
+              className={`menu-item ${
+                location.pathname === item.path ? "active" : ""
+              }`}
             >
               <span className="menu-icon">{item.icon}</span>
               {sidebarOpen && <span className="menu-label">{item.label}</span>}
@@ -55,7 +59,7 @@ function AdminLayout({ children }) {
 
       <div className="admin-main">
         <header className="admin-header">
-          <button 
+          <button
             className="toggle-sidebar-btn"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
@@ -67,9 +71,7 @@ function AdminLayout({ children }) {
           </div>
         </header>
 
-        <main className="admin-content">
-          {children}
-        </main>
+        <main className="admin-content">{children}</main>
       </div>
     </div>
   );

@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
-import AdminLayout from '../../components/admin/AdminLayout';
-import './Management.css';
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../../components/admin/AdminLayout";
+import { adminAPI } from "../../services/api";
+import "./Management.css";
 
 function ReportsPage() {
-  const [activeTab, setActiveTab] = useState('Doanh thu theo sân');
+  const [activeTab, setActiveTab] = useState("Doanh thu theo sân");
+  const [fieldRevenue, setFieldRevenue] = useState([]);
 
-  const fieldRevenue = [
-    { name: 'Sân bóng Thế Vinh', bookings: 45, revenue: '6.8M VND', usage: '87%' },
-    { name: 'Sân bóng Kỳ Nguyên', bookings: 38, revenue: '7.6M VND', usage: '82%' },
-    { name: 'Sân bóng Bảu Trối', bookings: 42, revenue: '5.0M VND', usage: '78%' },
-    { name: 'Sân bóng Sào Văng', bookings: 35, revenue: '6.3M VND', usage: '75%' },
-    { name: 'Sân bóng Phong Hoàng', bookings: 40, revenue: '5.2M VND', usage: '85%' }
-  ];
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      try {
+        const response = await adminAPI.getRevenueByField();
+        const data = response.data.data || [];
+        setFieldRevenue(
+          data.map((item) => ({
+            name: item.pitch_name,
+            bookings: item.total_bookings,
+            revenue: item.total_revenue,
+            usage: item.usage_percentage,
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to load revenue report", error);
+      }
+    };
+
+    fetchRevenue();
+  }, []);
 
   return (
     <AdminLayout>
@@ -29,18 +44,20 @@ function ReportsPage() {
         </div>
 
         <div className="tabs-container">
-          {['Doanh thu theo sân', 'Thống kê hàng tháng', 'Top khách hàng'].map(tab => (
-            <button 
-              key={tab}
-              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+          {["Doanh thu theo sân", "Thống kê hàng tháng", "Top khách hàng"].map(
+            (tab) => (
+              <button
+                key={tab}
+                className={`tab-btn ${activeTab === tab ? "active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            )
+          )}
         </div>
 
-        {activeTab === 'Doanh thu theo sân' && (
+        {activeTab === "Doanh thu theo sân" && (
           <div className="data-table">
             <h3>Doanh thu theo sân</h3>
             <table>
@@ -55,13 +72,30 @@ function ReportsPage() {
               <tbody>
                 {fieldRevenue.map((field, index) => (
                   <tr key={index}>
-                    <td><strong>{field.name}</strong></td>
-                    <td><span className="badge-count">{field.bookings}</span></td>
-                    <td><span className="price-tag">{field.revenue}</span></td>
+                    <td>
+                      <strong>{field.name}</strong>
+                    </td>
+                    <td>
+                      <span className="badge-count">{field.bookings}</span>
+                    </td>
+                    <td>
+                      <span className="price-tag">
+                        {field.revenue != null
+                          ? `${Number(field.revenue).toLocaleString(
+                              "vi-VN"
+                            )} VND`
+                          : "-"}
+                      </span>
+                    </td>
                     <td>
                       <div className="usage-bar">
-                        <div className="usage-fill" style={{ width: field.usage }}></div>
-                        <span>{field.usage}</span>
+                        <div
+                          className="usage-fill"
+                          style={{ width: `${field.usage || 0}%` }}
+                        ></div>
+                        <span>
+                          {field.usage != null ? `${field.usage}%` : "-"}
+                        </span>
                       </div>
                     </td>
                   </tr>

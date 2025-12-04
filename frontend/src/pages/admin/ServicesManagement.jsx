@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
-import AdminLayout from '../../components/admin/AdminLayout';
-import './Management.css';
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../../components/admin/AdminLayout";
+import { adminAPI } from "../../services/api";
+import "./Management.css";
 
 function ServicesManagement() {
-  const [services] = useState([
-    { id: 1, name: 'Áo bib', desc: 'Bộ áo phân đội màu khác nhau', price: '5,000 VND', category: 'Đồ dùng củ bóng đá', fields: '3 sân', status: 'Hoạt động' },
-    { id: 2, name: 'Bóng thi đấu', desc: 'Bóng FIFA chính hãng', price: 'Miễn phí', category: 'Đồ dùng củ bóng đá', fields: '4 sân', status: 'Hoạt động' },
-    { id: 3, name: 'Nước suối', desc: 'Nước suối cách 500ml', price: '10,000 VND', category: 'Nước uống & Đồ ăn', fields: '5 sân', status: 'Hoạt động' },
-    { id: 4, name: 'Nước thể thao', desc: 'Nước thể thao Pocari/Aquarius 500ml', price: '20,000 VND', category: 'Nước uống & Đồ ăn', fields: '3 sân', status: 'Hoạt động' },
-    { id: 5, name: 'Thuê trong tài', desc: 'Trong tài có kinh nghiệm cho trận đấu', price: '200,000 VND', category: 'Dịch vụ khác', fields: '5 sân', status: 'Hoạt động' }
-  ]);
+  const [services, setServices] = useState([]);
+  const [filter, setFilter] = useState("Tất cả");
 
-  const [filter, setFilter] = useState('Tất cả');
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        let params;
+        if (filter !== "Tất cả") {
+          const categoryMap = {
+            "Đồ dùng củ bóng đá": "equipment",
+            "Nước uống & Đồ ăn": "beverage",
+            "Dịch vụ khác": "other",
+          };
+          const category = categoryMap[filter];
+          params = category ? { category } : undefined;
+        }
+
+        const response = await adminAPI.getServices(params);
+        setServices(response.data.services || []);
+      } catch (error) {
+        console.error("Failed to load services", error);
+      }
+    };
+
+    fetchServices();
+  }, [filter]);
 
   return (
     <AdminLayout>
       <div className="management-page">
         <div className="page-header">
           <div>
-            <h1>Quản lý dịch vụ đó sung</h1>
-            <p>Quản lý các dịch vụ và thêm có sản tại sân</p>
+            <h1>Quản lý dịch vụ bổ sung</h1>
+            <p>Quản lý các dịch vụ và tiện ích tại sân</p>
           </div>
           <button className="btn-primary">
             <span>+</span> Thêm dịch vụ
@@ -27,16 +45,21 @@ function ServicesManagement() {
         </div>
 
         <div className="search-filter-bar">
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Tìm kiếm dịch vụ..."
             className="search-input"
           />
           <div className="filter-buttons">
-            {['Tất cả', 'Đồ dùng củ bóng đá', 'Nước uống & Đồ ăn', 'Dịch vụ khác'].map(cat => (
-              <button 
+            {[
+              "Tất cả",
+              "Đồ dùng củ bóng đá",
+              "Nước uống & Đồ ăn",
+              "Dịch vụ khác",
+            ].map((cat) => (
+              <button
                 key={cat}
-                className={`filter-btn ${filter === cat ? 'active' : ''}`}
+                className={`filter-btn ${filter === cat ? "active" : ""}`}
                 onClick={() => setFilter(cat)}
               >
                 {cat}
@@ -52,7 +75,7 @@ function ServicesManagement() {
                 <th>Dịch vụ</th>
                 <th>Mô tả</th>
                 <th>Giá</th>
-                <th>Sân</th>
+                <th>Danh mục</th>
                 <th>Trạng thái</th>
                 <th>Hành động</th>
               </tr>
@@ -60,13 +83,37 @@ function ServicesManagement() {
             <tbody>
               {services.map((service) => (
                 <tr key={service.id}>
-                  <td><strong>{service.name}</strong></td>
-                  <td><span className="sub-text">{service.desc}</span></td>
-                  <td><span className="price-tag">{service.price}</span></td>
-                  <td><span className="badge-count">{service.fields}</span></td>
                   <td>
-                    <span className={`status-badge ${service.status === 'Hoạt động' ? 'active' : 'inactive'}`}>
-                      {service.status}
+                    <strong>{service.name}</strong>
+                  </td>
+                  <td>
+                    <span className="sub-text">{service.description}</span>
+                  </td>
+                  <td>
+                    <span className="price-tag">
+                      {service.price != null
+                        ? `${Number(service.price).toLocaleString("vi-VN")} VND`
+                        : "-"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="badge-count">
+                      {service.category === "equipment"
+                        ? "Đồ dùng củ bóng đá"
+                        : service.category === "beverage"
+                        ? "Nước uống & Đồ ăn"
+                        : "Dịch vụ khác"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge ${
+                        service.status === "active" ? "active" : "inactive"
+                      }`}
+                    >
+                      {service.status === "active"
+                        ? "Hoạt động"
+                        : "Không hoạt động"}
                     </span>
                   </td>
                   <td>

@@ -1,15 +1,54 @@
-import React, { useState } from 'react';
-import AdminLayout from '../../components/admin/AdminLayout';
-import './Management.css';
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../../components/admin/AdminLayout";
+import { adminAPI } from "../../services/api";
+import "./Management.css";
 
 function CustomersManagement() {
-  const [customers] = useState([
-    { id: 1, name: 'Nguyễn Văn A', email: 'nguyenvana@example.com', phone: '0901234567', bookings: 12, spent: '1.8M VND', joinDate: '15/6/2024', status: 'Hoạt động' },
-    { id: 2, name: 'Trần Thị B', email: 'tranthib@example.com', phone: '0902345678', bookings: 8, spent: '1.2M VND', joinDate: '20/8/2024', status: 'Hoạt động' },
-    { id: 3, name: 'Lê Văn C', email: 'levanc@example.com', phone: '0903456789', bookings: 6, spent: '0.9M VND', joinDate: '10/9/2024', status: 'Hoạt động' },
-    { id: 4, name: 'Phạm Văn D', email: 'phamvand@example.com', phone: '0904567890', bookings: 5, spent: '0.8M VND', joinDate: '5/10/2024', status: 'Không hoạt động' },
-    { id: 5, name: 'Hoàng Thị E', email: 'hoangthie@example.com', phone: '0905678901', bookings: 4, spent: '0.6M VND', joinDate: '12/11/2024', status: 'Hoạt động' }
-  ]);
+  const [customers, setCustomers] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await adminAPI.getCustomers(
+          search ? { search } : undefined
+        );
+        const data = response.data.customers || [];
+        setCustomers(
+          data.map((c) => ({
+            id: c.id,
+            name: c.full_name,
+            email: c.email,
+            phone: c.phone,
+            bookings: c.total_bookings || 0,
+            spent: c.total_spent || 0,
+            joinDate: c.created_at
+              ? new Date(c.created_at).toLocaleDateString("vi-VN")
+              : "",
+            active: c.is_active === 1,
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to load customers", error);
+      }
+    };
+
+    fetchCustomers();
+  }, [search]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await adminAPI.getCustomerStats();
+        setStats(response.data.stats || null);
+      } catch (error) {
+        console.error("Failed to load customer stats", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <AdminLayout>
@@ -20,18 +59,44 @@ function CustomersManagement() {
             <p>Quản lý danh sách khách hàng và lịch sử sử dụng dịch vụ</p>
           </div>
           <div className="stats-mini">
-            <div className="stat-mini">Tổng khách hàng: <strong>5</strong></div>
-            <div className="stat-mini">Khách hoạt động: <strong>4</strong></div>
-            <div className="stat-mini">Tổng chi tiêu: <strong>5.3M</strong></div>
-            <div className="stat-mini">Trung bình/khách: <strong>1050K</strong></div>
+            <div className="stat-mini">
+              Tổng khách hàng:{" "}
+              <strong>{stats ? stats.totalCustomers : 0}</strong>
+            </div>
+            <div className="stat-mini">
+              Khách hoạt động:{" "}
+              <strong>{stats ? stats.activeCustomers : 0}</strong>
+            </div>
+            <div className="stat-mini">
+              Tổng chi tiêu:{" "}
+              <strong>
+                {stats
+                  ? `${Number(stats.totalRevenue || 0).toLocaleString(
+                      "vi-VN"
+                    )} VND`
+                  : "0 VND"}
+              </strong>
+            </div>
+            <div className="stat-mini">
+              Trung bình/khách:{" "}
+              <strong>
+                {stats
+                  ? `${Number(stats.avgSpending || 0).toLocaleString(
+                      "vi-VN"
+                    )} VND`
+                  : "0 VND"}
+              </strong>
+            </div>
           </div>
         </div>
 
         <div className="search-filter-bar">
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Tìm kiếm theo tên hoặc email..."
             className="search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
@@ -51,15 +116,27 @@ function CustomersManagement() {
             <tbody>
               {customers.map((customer) => (
                 <tr key={customer.id}>
-                  <td><strong>{customer.name}</strong></td>
-                  <td><span className="sub-text">{customer.email}</span></td>
+                  <td>
+                    <strong>{customer.name}</strong>
+                  </td>
+                  <td>
+                    <span className="sub-text">{customer.email}</span>
+                  </td>
                   <td>{customer.phone}</td>
-                  <td><span className="badge-count">{customer.bookings}</span></td>
-                  <td><span className="price-tag">{customer.spent}</span></td>
+                  <td>
+                    <span className="badge-count">{customer.bookings}</span>
+                  </td>
+                  <td>
+                    <span className="price-tag">{customer.spent}</span>
+                  </td>
                   <td>{customer.joinDate}</td>
                   <td>
-                    <span className={`status-badge ${customer.status === 'Hoạt động' ? 'active' : 'inactive'}`}>
-                      {customer.status}
+                    <span
+                      className={`status-badge ${
+                        customer.active ? "active" : "inactive"
+                      }`}
+                    >
+                      {customer.active ? "Hoạt động" : "Không hoạt động"}
                     </span>
                   </td>
                 </tr>

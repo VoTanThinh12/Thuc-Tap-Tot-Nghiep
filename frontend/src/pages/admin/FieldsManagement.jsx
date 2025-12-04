@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
-import AdminLayout from '../../components/admin/AdminLayout';
-import './Management.css';
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../../components/admin/AdminLayout";
+import { adminAPI } from "../../services/api";
+import "./Management.css";
 
 function FieldsManagement() {
-  const [fields] = useState([
-    { id: 1, name: 'Sân bóng Thế Vinh', location: 'Quận 1, TP HCM', type: '5v5', price: '150,000 VND', status: 'Hoạt động' },
-    { id: 2, name: 'Sân bóng Kỳ Nguyên', location: 'Quận 3, TP HCM', type: '7v7', price: '200,000 VND', status: 'Hoạt động' },
-    { id: 3, name: 'Sân bóng Bảu Trối', location: 'Quận 7, TP HCM', type: '5v5', price: '120,000 VND', status: 'Bảo trì' },
-    { id: 4, name: 'Sân bóng Sào Văng', location: 'Bình Thạnh, TP HCM', type: '7v7', price: '180,000 VND', status: 'Hoạt động' }
-  ]);
+  const [fields, setFields] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFields = async () => {
+      try {
+        const response = await adminAPI.getFields();
+        setFields(response.data.fields || []);
+      } catch (error) {
+        console.error("Failed to load fields", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFields();
+  }, []);
 
   return (
     <AdminLayout>
@@ -24,8 +36,8 @@ function FieldsManagement() {
         </div>
 
         <div className="search-filter-bar">
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Tìm kiếm theo tên hoặc địa điểm..."
             className="search-input"
           />
@@ -44,25 +56,57 @@ function FieldsManagement() {
               </tr>
             </thead>
             <tbody>
-              {fields.map((field) => (
-                <tr key={field.id}>
-                  <td><strong>{field.name}</strong></td>
-                  <td>{field.location}</td>
-                  <td>{field.type}</td>
-                  <td><span className="price-tag">{field.price}</span></td>
-                  <td>
-                    <span className={`status-badge ${field.status === 'Hoạt động' ? 'active' : 'inactive'}`}>
-                      {field.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="btn-edit">Sửa</button>
-                      <button className="btn-delete">Xóa</button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="6">Đang tải dữ liệu...</td>
                 </tr>
-              ))}
+              ) : fields.length === 0 ? (
+                <tr>
+                  <td colSpan="6">Không có sân nào</td>
+                </tr>
+              ) : (
+                fields.map((field) => (
+                  <tr key={field.id}>
+                    <td>
+                      <strong>{field.name}</strong>
+                    </td>
+                    <td>{field.location}</td>
+                    <td>{field.type}</td>
+                    <td>
+                      <span className="price-tag">
+                        {field.price_per_hour != null
+                          ? `${Number(field.price_per_hour).toLocaleString(
+                              "vi-VN"
+                            )} VND`
+                          : "-"}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          field.status === "active"
+                            ? "active"
+                            : field.status === "maintenance"
+                            ? "inactive"
+                            : "inactive"
+                        }`}
+                      >
+                        {field.status === "active"
+                          ? "Hoạt động"
+                          : field.status === "maintenance"
+                          ? "Bảo trì"
+                          : "Không hoạt động"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn-edit">Sửa</button>
+                        <button className="btn-delete">Xóa</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

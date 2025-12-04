@@ -1,14 +1,14 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { authAPI } from '../services/api';
-import { AuthContext } from '../context/AuthContext';
-import { toast } from 'react-toastify';
+import React, { useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { authAPI } from "../services/api";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -19,15 +19,15 @@ const LoginPage = () => {
     try {
       const response = await authAPI.login({ email, password });
       login(response.data.user, response.data.token);
-      toast.success('Đăng nhập thành công!');
-      
-      if (response.data.user.role === 'admin') {
-        navigate('/admin');
+      toast.success("Đăng nhập thành công!");
+
+      if (response.data.user.role === "admin") {
+        navigate("/admin/dashboard");
       } else {
-        navigate('/');
+        navigate("/");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
+      toast.error(error.response?.data?.message || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ const LoginPage = () => {
           <div className="card shadow">
             <div className="card-body p-5">
               <h2 className="text-center mb-4">🔐 Đăng nhập</h2>
-              
+
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
@@ -64,12 +64,12 @@ const LoginPage = () => {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-success w-100"
                   disabled={loading}
                 >
-                  {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+                  {loading ? "Đang xử lý..." : "Đăng nhập"}
                 </button>
               </form>
 
