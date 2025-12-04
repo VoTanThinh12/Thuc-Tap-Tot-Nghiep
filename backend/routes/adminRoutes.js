@@ -26,6 +26,11 @@ router.get(
   adminAuth,
   dashboardController.getDashboardStats
 );
+router.get(
+  "/dashboard/revenue-chart",
+  adminAuth,
+  dashboardController.getRevenueChart
+);
 
 // Fields (Sân)
 router.get("/fields", adminAuth, fieldController.getAllFields);
@@ -35,20 +40,19 @@ router.delete("/fields/:id", adminAuth, fieldController.deleteField);
 
 // Bookings
 router.get("/bookings", adminAuth, bookingController.getAllBookings);
+router.get("/bookings/stats", adminAuth, bookingController.getBookingStats);
 router.get("/bookings/:id", adminAuth, bookingController.getBookingDetails);
 router.put(
   "/bookings/:id/status",
   adminAuth,
   bookingController.updateBookingStatus
 );
+router.delete("/bookings/:id", adminAuth, bookingController.deleteBooking);
 
 // Customers
 router.get("/customers", adminAuth, customerController.getAllCustomers);
-router.get(
-  "/customers/:id/stats",
-  adminAuth,
-  customerController.getCustomerStats
-);
+router.get("/customers/stats", adminAuth, customerController.getCustomerStats);
+router.get("/customers/:id", adminAuth, customerController.getCustomerById);
 
 // Services
 router.get("/services", adminAuth, serviceController.getAllServices);
