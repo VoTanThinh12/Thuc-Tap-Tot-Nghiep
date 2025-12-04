@@ -63,5 +63,21 @@ router.delete("/services/:id", adminAuth, serviceController.deleteService);
 // Reports
 router.get("/reports/revenue", adminAuth, reportController.getRevenueReport);
 router.get("/reports/fields", adminAuth, reportController.getFieldReport);
+router.get(
+  "/reports/revenue-by-field",
+  adminAuth,
+  reportController.getRevenueByField
+);
+router.get(
+  "/reports/monthly-stats",
+  adminAuth,
+  reportController.getMonthlyStats
+);
+router.get(
+  "/reports/top-customers",
+  adminAuth,
+  reportController.getTopCustomers
+);
+router.get("/reports/full", adminAuth, reportController.getFullReport);
 
 module.exports = router;
