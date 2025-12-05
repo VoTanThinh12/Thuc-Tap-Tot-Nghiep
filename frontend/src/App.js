@@ -24,6 +24,7 @@ import BookingsManagement from "./pages/admin/BookingsManagement";
 import CustomersManagement from "./pages/admin/CustomersManagement";
 import ServicesManagement from "./pages/admin/ServicesManagement";
 import ReportsPage from "./pages/admin/ReportsPage";
+import SettingsPage from "./pages/admin/SettingsPage";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
@@ -171,6 +172,7 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
+          <Route path="/admin/settings" element={<SettingsPage />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>

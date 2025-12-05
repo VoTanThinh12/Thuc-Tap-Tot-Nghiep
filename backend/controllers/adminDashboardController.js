@@ -85,3 +85,29 @@ exports.getRevenueChart = async (req, res) => {
     });
   }
 };
+
+exports.getRecentBookings = async (req, res) => {
+  try {
+    const [bookings] = await db.query(`
+      SELECT 
+        b.*,
+        p.name as pitch_name
+      FROM bookings b
+      LEFT JOIN pitches p ON b.pitch_id = p.id
+      ORDER BY b.created_at DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      success: true,
+      bookings: bookings,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi tải đơn đặt gần đây",
+      error: error.message,
+    });
+  }
+};

@@ -9,6 +9,7 @@ const bookingController = require("../controllers/adminBookingController");
 const customerController = require("../controllers/adminCustomerController");
 const serviceController = require("../controllers/adminServiceController");
 const reportController = require("../controllers/adminReportController");
+const settingsController = require("../controllers/adminSettingsController"); // ✅ THÊM DÒNG NÀY
 
 // === AUTH ROUTES (KHÔNG CẦN ĐĂNG NHẬP) ===
 router.post("/auth/login", authController.login);
@@ -26,6 +27,11 @@ router.get(
   adminAuth,
   dashboardController.getDashboardStats
 );
+router.get(
+  "/dashboard/bookings",
+  adminAuth,
+  dashboardController.getRecentBookings
+); // ✅ THÊM
 router.get(
   "/dashboard/revenue-chart",
   adminAuth,
@@ -80,6 +86,14 @@ router.get(
 );
 router.get("/reports/full", adminAuth, reportController.getFullReport);
 
+// ✅ Settings Routes
+router.get("/settings", adminAuth, settingsController.getSettings);
+router.put("/settings/:type", adminAuth, settingsController.updateSettings);
+router.post(
+  "/settings/change-password",
+  adminAuth,
+  settingsController.changePassword
+);
 router.post("/settings/backup", adminAuth, settingsController.backupData);
 router.post(
   "/settings/logout-all",
