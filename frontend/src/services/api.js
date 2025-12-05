@@ -64,6 +64,8 @@ export const adminAPI = {
   // Bookings
   getBookings: (params) => api.get("/admin/bookings", { params }),
   getBookingStats: () => api.get("/admin/bookings/stats"),
+  updateBookingStatus: (id, status) =>
+    api.put(`/admin/bookings/${id}/status`, { status }),
 
   // Customers
   getCustomers: (params) => api.get("/admin/customers", { params }),
@@ -76,6 +78,13 @@ export const adminAPI = {
   getRevenueByField: () => api.get("/admin/reports/revenue-by-field"),
   getMonthlyStats: () => api.get("/admin/reports/monthly-stats"),
   getTopCustomers: () => api.get("/admin/reports/top-customers"),
+
+  // Settings
+  getSettings: () => api.get("/admin/settings"),
+  updateSettings: (type, data) => api.put(`/admin/settings/${type}`, data),
+  changePassword: (data) => api.post("/admin/settings/change-password", data),
+  backupData: () => api.post("/admin/settings/backup"),
+  logoutAllSessions: () => api.post("/admin/settings/logout-all"),
 };
 
 export default api;

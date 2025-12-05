@@ -80,4 +80,11 @@ router.get(
 );
 router.get("/reports/full", adminAuth, reportController.getFullReport);
 
+router.post("/settings/backup", adminAuth, settingsController.backupData);
+router.post(
+  "/settings/logout-all",
+  adminAuth,
+  settingsController.logoutAllSessions
+);
+
 module.exports = router;

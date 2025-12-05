@@ -85,20 +85,30 @@ exports.updateBookingStatus = async (req, res) => {
       });
     }
 
-    await db.query(
-      "UPDATE bookings SET status = ?, updated_at = NOW() WHERE id = ?",
-      [status, id]
-    );
+    // Check if booking exists
+    const [existing] = await db.query("SELECT * FROM bookings WHERE id = ?", [
+      id,
+    ]);
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đơn đặt sân",
+      });
+    }
+
+    // Update status
+    await db.query("UPDATE bookings SET status = ? WHERE id = ?", [status, id]);
 
     res.json({
       success: true,
       message: "Cập nhật trạng thái thành công",
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error updating booking status:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Lỗi khi cập nhật trạng thái",
       error: error.message,
     });
   }

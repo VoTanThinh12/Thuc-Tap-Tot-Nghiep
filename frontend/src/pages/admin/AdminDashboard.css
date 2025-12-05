@@ -127,3 +127,152 @@
   background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
 }
+/* Thêm vào cuối file AdminDashboard.css */
+
+/* Price Tag */
+.price-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(46, 204, 113, 0.15) 0%,
+    rgba(39, 174, 96, 0.15) 100%
+  );
+  color: #2ecc71;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+  background: linear-gradient(
+    135deg,
+    rgba(241, 196, 15, 0.2) 0%,
+    rgba(243, 156, 18, 0.2) 100%
+  );
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.4);
+}
+
+.status-badge.confirmed {
+  background: linear-gradient(
+    135deg,
+    rgba(52, 152, 219, 0.2) 0%,
+    rgba(41, 128, 185, 0.2) 100%
+  );
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.4);
+}
+
+.status-badge.completed {
+  background: linear-gradient(
+    135deg,
+    rgba(46, 204, 113, 0.2) 0%,
+    rgba(39, 174, 96, 0.2) 100%
+  );
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+.status-badge.cancelled {
+  background: linear-gradient(
+    135deg,
+    rgba(231, 76, 60, 0.2) 0%,
+    rgba(192, 57, 43, 0.2) 100%
+  );
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+.booking-id {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  color: #3498db;
+  font-size: 13px;
+}
+/* ==================== CLICKABLE STAT CARDS ==================== */
+.stat-card.clickable {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  border-left-width: 4px;
+}
+
+.stat-card.clickable:active {
+  transform: translateY(-4px);
+}
+
+/* Arrow Icon */
+.stat-arrow {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 20px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable:hover .stat-arrow {
+  opacity: 1;
+  right: 12px;
+  color: var(--text-primary);
+}
+
+/* Hover Effects for Different Colors */
+.stat-card.clickable:hover {
+  background: linear-gradient(
+    135deg,
+    var(--bg-card) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+}
+
+/* Ripple Effect */
+.stat-card.clickable::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.stat-card.clickable:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stat-arrow {
+    font-size: 16px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .stat-card.clickable:hover {
+    transform: translateY(-4px);
+  }
+}

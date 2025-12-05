@@ -28,6 +28,7 @@ import ReportsPage from "./pages/admin/ReportsPage";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
+import "./styles/theme.css";
 
 // Protected Route cho Admin
 function ProtectedAdminRoute({ children }) {
