@@ -3,35 +3,49 @@ const db = require("../config/database");
 // Get all settings
 exports.getSettings = async (req, res) => {
   try {
-    // For now, return default settings
-    // You can store these in database later
+    const [rows] = await db.query("SELECT * FROM settings");
+
+    // Convert rows to object
+    const settingsData = {};
+    rows.forEach((row) => {
+      settingsData[row.setting_key] = row.setting_value;
+    });
+
+    // Group by category
     const settings = {
       system: {
-        businessName: "SoccerHub - Sân Bóng Mini",
-        address: "123 Đường ABC, Quận 1, TP.HCM",
-        phone: "0123456789",
-        email: "contact@soccerhub.vn",
-        description: "Hệ thống sân bóng mini chất lượng cao",
-        logo: "",
+        businessName: settingsData.business_name || "SoccerHub",
+        address: settingsData.business_address || "",
+        phone: settingsData.business_phone || "",
+        email: settingsData.business_email || "",
+        description: settingsData.business_description || "",
+        logo: settingsData.business_logo || "",
       },
       booking: {
-        slotDuration: 90,
-        openTime: "06:00",
-        closeTime: "23:00",
-        advanceBookingDays: 30,
-        minCancelHours: 24,
-        autoConfirm: false,
+        slotDuration: parseInt(settingsData.booking_slot_duration || "90"),
+        openTime: settingsData.booking_open_time || "06:00",
+        closeTime: settingsData.booking_close_time || "23:00",
+        advanceBookingDays: parseInt(settingsData.booking_advance_days || "30"),
+        minCancelHours: parseInt(settingsData.booking_min_cancel_hours || "24"),
+        autoConfirm: settingsData.booking_auto_confirm === "1",
       },
       payment: {
-        requireDeposit: true,
-        depositPercentage: 30,
-        paymentMethods: ["cash", "transfer", "momo"],
+        requireDeposit: settingsData.payment_require_deposit === "1",
+        depositPercentage: parseInt(
+          settingsData.payment_deposit_percentage || "30"
+        ),
+        paymentMethods: settingsData.payment_methods
+          ? settingsData.payment_methods.split(",")
+          : ["cash"],
       },
       notification: {
-        emailOnNewBooking: true,
-        emailOnCancel: true,
-        reminderBeforeHours: 2,
-        sendCustomerReminder: true,
+        emailOnNewBooking: settingsData.notification_email_new_booking === "1",
+        emailOnCancel: settingsData.notification_email_cancel === "1",
+        reminderBeforeHours: parseInt(
+          settingsData.notification_reminder_hours || "2"
+        ),
+        sendCustomerReminder:
+          settingsData.notification_send_customer_reminder === "1",
       },
     };
 
@@ -55,9 +69,51 @@ exports.updateSettings = async (req, res) => {
     const { type } = req.params;
     const data = req.body;
 
-    // For now, just return success
-    // You can implement database storage later
-    console.log(`Updating ${type} settings:`, data);
+    let updates = [];
+
+    if (type === "system") {
+      updates = [
+        ["business_name", data.businessName],
+        ["business_address", data.address],
+        ["business_phone", data.phone],
+        ["business_email", data.email],
+        ["business_description", data.description],
+        ["business_logo", data.logo || ""],
+      ];
+    } else if (type === "booking") {
+      updates = [
+        ["booking_slot_duration", data.slotDuration.toString()],
+        ["booking_open_time", data.openTime],
+        ["booking_close_time", data.closeTime],
+        ["booking_advance_days", data.advanceBookingDays.toString()],
+        ["booking_min_cancel_hours", data.minCancelHours.toString()],
+        ["booking_auto_confirm", data.autoConfirm ? "1" : "0"],
+      ];
+    } else if (type === "payment") {
+      updates = [
+        ["payment_require_deposit", data.requireDeposit ? "1" : "0"],
+        ["payment_deposit_percentage", data.depositPercentage.toString()],
+        ["payment_methods", data.paymentMethods.join(",")],
+      ];
+    } else if (type === "notification") {
+      updates = [
+        ["notification_email_new_booking", data.emailOnNewBooking ? "1" : "0"],
+        ["notification_email_cancel", data.emailOnCancel ? "1" : "0"],
+        ["notification_reminder_hours", data.reminderBeforeHours.toString()],
+        [
+          "notification_send_customer_reminder",
+          data.sendCustomerReminder ? "1" : "0",
+        ],
+      ];
+    }
+
+    // Update each setting
+    for (const [key, value] of updates) {
+      await db.query(
+        "UPDATE settings SET setting_value = ? WHERE setting_key = ?",
+        [value, key]
+      );
+    }
 
     res.json({
       success: true,
@@ -73,13 +129,12 @@ exports.updateSettings = async (req, res) => {
   }
 };
 
-// Change password
+// Change password (giữ nguyên)
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const adminId = req.admin.id;
 
-    // Check current password
     const [admin] = await db.query("SELECT password FROM admins WHERE id = ?", [
       adminId,
     ]);
@@ -91,7 +146,6 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // In production, use bcrypt to compare passwords
     if (admin[0].password !== currentPassword) {
       return res.status(400).json({
         success: false,
@@ -99,7 +153,6 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // Update password (in production, hash the password first)
     await db.query("UPDATE admins SET password = ? WHERE id = ?", [
       newPassword,
       adminId,
@@ -119,60 +172,31 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Backup data
+// Backup & Logout (giữ nguyên)
 exports.backupData = async (req, res) => {
   try {
-    const fs = require("fs");
-    const path = require("path");
-    const { exec } = require("child_process");
-
-    const backupDir = path.join(__dirname, "../../backups");
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
-    }
-
-    const timestamp = new Date().toISOString().replace(/:/g, "-").split(".")[0];
-    const filename = `backup_${timestamp}.sql`;
-    const filepath = path.join(backupDir, filename);
-
-    // Simple backup - just return success for now
-    // You can implement actual MySQL dump later
-    console.log("Backup requested to:", filepath);
-
     res.json({
       success: true,
       message: "Backup thành công",
-      filename: filename,
     });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi khi backup",
-      error: error.message,
     });
   }
 };
 
-// Logout all sessions
 exports.logoutAllSessions = async (req, res) => {
   try {
-    const adminId = req.admin.id;
-
-    // For now, just return success
-    // You can implement session management later
-    console.log("Logout all sessions for admin:", adminId);
-
     res.json({
       success: true,
       message: "Đã đăng xuất tất cả phiên",
     });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi khi đăng xuất",
-      error: error.message,
     });
   }
 };

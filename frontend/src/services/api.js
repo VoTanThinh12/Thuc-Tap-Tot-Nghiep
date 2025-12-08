@@ -41,11 +41,21 @@ export const pitchAPI = {
 
 // Booking API
 export const bookingAPI = {
+  // Check khung giờ có trống không
+  checkAvailability: (data) => api.post("/bookings/check-availability", data),
+
+  // Tạo booking mới
   create: (data) => api.post("/bookings", data),
+
+  // Lấy danh sách booking của user
   getMyBookings: () => api.get("/bookings/my-bookings"),
-  getAllBookings: () => api.get("/bookings/all"),
-  updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
-  cancel: (id) => api.put(`/bookings/${id}/cancel`),
+
+  // Lấy chi tiết booking
+  getById: (id) => api.get(`/bookings/${id}`),
+
+  // Hủy booking
+  cancel: (id, reason) =>
+    api.put(`/bookings/${id}/cancel`, { cancellation_reason: reason }),
 };
 
 // Admin API
@@ -86,5 +96,8 @@ export const adminAPI = {
   backupData: () => api.post("/admin/settings/backup"),
   logoutAllSessions: () => api.post("/admin/settings/logout-all"),
 };
-
+export const timeslotAPI = {
+  getAvailable: (pitchId, date) =>
+    api.get(`/timeslots?pitch_id=${pitchId}&date=${date}`),
+};
 export default api;

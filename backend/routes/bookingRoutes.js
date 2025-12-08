@@ -1,15 +1,27 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const bookingController = require('../controllers/bookingController');
-const { authenticate, authorizeAdmin } = require('../middleware/auth');
+const bookingController = require("../controllers/bookingController");
+const { authenticate, authorizeAdmin } = require("../middleware/auth");
 
-router.post('/', authenticate, bookingController.createBooking);
-router.get('/my-bookings', authenticate, bookingController.getMyBookings);
-router.get('/:id', authenticate, bookingController.getBookingDetail);
-router.put('/:id/cancel', authenticate, bookingController.cancelBooking);
+router.post("/check-availability", bookingController.checkAvailability);
+
+router.post("/", authenticate, bookingController.createBooking);
+router.get("/my-bookings", authenticate, bookingController.getMyBookings);
+router.get("/:id", authenticate, bookingController.getBookingDetail);
+router.put("/:id/cancel", authenticate, bookingController.cancelBooking);
 
 // Admin routes
-router.get('/all/list', authenticate, authorizeAdmin, bookingController.getAllBookings);
-router.put('/:id/status', authenticate, authorizeAdmin, bookingController.updateBookingStatus);
+router.get(
+  "/all/list",
+  authenticate,
+  authorizeAdmin,
+  bookingController.getAllBookings
+);
+router.put(
+  "/:id/status",
+  authenticate,
+  authorizeAdmin,
+  bookingController.updateBookingStatus
+);
 
 module.exports = router;

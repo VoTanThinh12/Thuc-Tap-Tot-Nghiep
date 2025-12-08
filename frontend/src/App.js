@@ -164,6 +164,8 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
+          <Route path="/admin/settings" element={<SettingsPage />} />
+
           <Route
             path="/admin/settings"
             element={
@@ -172,7 +174,6 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
-          <Route path="/admin/settings" element={<SettingsPage />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>
