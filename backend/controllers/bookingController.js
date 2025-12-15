@@ -30,11 +30,11 @@ exports.checkAvailability = async (req, res) => {
         pitch_id,
         booking_date,
         end_time,
-        start_time, // Overlap check 1
-        end_time,
-        end_time, // Overlap check 2
         start_time,
-        end_time, // Contained within
+        end_time,
+        end_time,
+        start_time,
+        end_time,
       ]
     );
 
