@@ -3,14 +3,14 @@
 }
 
 .dashboard-header h1 {
-  color: #f3f5fa;
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
 .dashboard-header p {
-  color: #8b92a8;
+  color: var(--text-muted);
   font-size: 14px;
   margin-bottom: 24px;
 }
@@ -23,17 +23,21 @@
 }
 
 .stat-card {
-  background: #1e2332;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 24px;
   border-left: 4px solid;
   display: flex;
   gap: 16px;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-icon {
@@ -43,6 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .stat-info {
@@ -50,13 +55,14 @@
 }
 
 .stat-label {
-  color: #8b92a8;
+  color: var(--text-muted);
   font-size: 13px;
   margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .stat-value {
-  color: #f3f5fa;
+  color: var(--text-primary);
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -67,19 +73,16 @@
   font-weight: 600;
 }
 
-.dashboard-content {
-  display: grid;
-  gap: 24px;
-}
-
+/* ============ RECENT BOOKINGS ============ */
 .recent-bookings {
-  background: #1e2332;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 24px;
+  box-shadow: var(--shadow-md);
 }
 
 .recent-bookings h3 {
-  color: #f3f5fa;
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 20px;
@@ -93,59 +96,43 @@
 .bookings-table th {
   text-align: left;
   padding: 12px;
-  color: #8b92a8;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
-  border-bottom: 1px solid #2d3548;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .bookings-table td {
   padding: 16px 12px;
-  color: #e1e4ec;
+  color: var(--text-secondary);
   font-size: 14px;
-  border-bottom: 1px solid #2d3548;
+  border-bottom: 1px solid var(--border-color);
 }
 
+.bookings-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+/* ============ BADGES ============ */
 .booking-id {
-  color: #22c886;
-  font-weight: 600;
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  color: var(--info-color);
+  font-size: 13px;
 }
 
-.status-badge {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-badge.confirmed {
-  background: rgba(34, 200, 134, 0.15);
-  color: #22c886;
-}
-
-.status-badge.pending {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-}
-/* Thêm vào cuối file AdminDashboard.css */
-
-/* Price Tag */
 .price-tag {
   display: inline-block;
   padding: 6px 12px;
-  background: linear-gradient(
-    135deg,
-    rgba(46, 204, 113, 0.15) 0%,
-    rgba(39, 174, 96, 0.15) 100%
-  );
-  color: #2ecc71;
+  background: var(--status-completed-bg);
+  color: var(--status-completed-color);
   border-radius: 6px;
   font-weight: 600;
   font-size: 13px;
-  border: 1px solid rgba(46, 204, 113, 0.3);
+  border: 1px solid var(--status-completed-border);
 }
 
-/* Status Badges */
+/* STATUS BADGES */
 .status-badge {
   display: inline-block;
   padding: 6px 12px;
@@ -157,69 +144,38 @@
 }
 
 .status-badge.pending {
-  background: linear-gradient(
-    135deg,
-    rgba(241, 196, 15, 0.2) 0%,
-    rgba(243, 156, 18, 0.2) 100%
-  );
-  color: #f1c40f;
-  border: 1px solid rgba(241, 196, 15, 0.4);
+  background: var(--status-pending-bg);
+  color: var(--status-pending-color);
+  border: 1px solid var(--status-pending-border);
 }
 
 .status-badge.confirmed {
-  background: linear-gradient(
-    135deg,
-    rgba(52, 152, 219, 0.2) 0%,
-    rgba(41, 128, 185, 0.2) 100%
-  );
-  color: #3498db;
-  border: 1px solid rgba(52, 152, 219, 0.4);
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed-color);
+  border: 1px solid var(--status-confirmed-border);
 }
 
 .status-badge.completed {
-  background: linear-gradient(
-    135deg,
-    rgba(46, 204, 113, 0.2) 0%,
-    rgba(39, 174, 96, 0.2) 100%
-  );
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.4);
+  background: var(--status-completed-bg);
+  color: var(--status-completed-color);
+  border: 1px solid var(--status-completed-border);
 }
 
 .status-badge.cancelled {
-  background: linear-gradient(
-    135deg,
-    rgba(231, 76, 60, 0.2) 0%,
-    rgba(192, 57, 43, 0.2) 100%
-  );
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.4);
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled-color);
+  border: 1px solid var(--status-cancelled-border);
 }
 
-.booking-id {
-  font-family: "Courier New", monospace;
-  font-weight: 700;
-  color: #3498db;
-  font-size: 13px;
-}
-/* ==================== CLICKABLE STAT CARDS ==================== */
+/* ============ CLICKABLE CARDS ============ */
 .stat-card.clickable {
   cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
 }
 
 .stat-card.clickable:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-  border-left-width: 4px;
 }
 
-.stat-card.clickable:active {
-  transform: translateY(-4px);
-}
-
-/* Arrow Icon */
 .stat-arrow {
   position: absolute;
   top: 16px;
@@ -233,107 +189,11 @@
 .stat-card.clickable:hover .stat-arrow {
   opacity: 1;
   right: 12px;
-  color: var(--text-primary);
 }
 
-/* Hover Effects for Different Colors */
-.stat-card.clickable:hover {
-  background: linear-gradient(
-    135deg,
-    var(--bg-card) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-}
-
-/* Ripple Effect */
-.stat-card.clickable::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.stat-card.clickable:active::after {
-  width: 300px;
-  height: 300px;
-}
-
-/* Responsive */
+/* ============ RESPONSIVE ============ */
 @media (max-width: 768px) {
-  .stat-arrow {
-    font-size: 16px;
-    top: 12px;
-    right: 12px;
-  }
-
-  .stat-card.clickable:hover {
-    transform: translateY(-4px);
-  }
-}
-/* Charts Section */
-.charts-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.chart-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.chart-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.chart-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.chart-body {
-  padding: 24px;
-  height: 300px;
-}
-
-/* Responsive */
-@media (max-width: 968px) {
-  .charts-row {
+  .stats-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* Clickable stat cards */
-.stat-card.clickable {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.stat-card.clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-
-.stat-arrow {
-  font-size: 24px;
-  color: #9ca3af;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.stat-card.clickable:hover .stat-arrow {
-  opacity: 1;
 }
