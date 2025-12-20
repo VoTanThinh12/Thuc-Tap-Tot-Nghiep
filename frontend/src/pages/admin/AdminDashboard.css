@@ -276,3 +276,64 @@
     transform: translateY(-4px);
   }
 }
+/* Charts Section */
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.chart-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.chart-body {
+  padding: 24px;
+  height: 300px;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Clickable stat cards */
+.stat-card.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-arrow {
+  font-size: 24px;
+  color: #9ca3af;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card.clickable:hover .stat-arrow {
+  opacity: 1;
+}

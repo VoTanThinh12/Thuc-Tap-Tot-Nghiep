@@ -1,5 +1,5 @@
 const Pitch = require("../models/Pitch");
-
+const db = require("../config/database");
 // Lấy danh sách sân
 exports.getAllPitches = async (req, res) => {
   try {

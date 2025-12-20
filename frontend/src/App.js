@@ -31,19 +31,77 @@ import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import "./styles/theme.css";
 
-// Protected Route cho Admin
+// Protected Route cho Admin - CHỈ ADMIN MỚI VÀO ĐƯỢC
 function ProtectedAdminRoute({ children }) {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu chưa đăng nhập => chuyển đến trang đăng nhập admin
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  // Nếu không phải admin => chuyển về trang chủ client
+  if (user.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  // Nếu là admin => cho phép truy cập
+  return children;
+}
+
+// Protected Route cho Client - CHỈ CLIENT MỚI VÀO ĐƯỢC (không cho admin)
+function ProtectedClientRoute({ children }) {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu chưa đăng nhập => yêu cầu đăng nhập
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Nếu là admin => chuyển về trang admin dashboard
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Nếu là client => cho phép truy cập
+  return children;
+}
+
+// Public Route - Tự động redirect dựa trên role
+function PublicRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) {
     return null;
   }
 
+  // Nếu đã đăng nhập với role admin => chuyển về admin dashboard
   if (user && user.role === "admin") {
-    return children;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
-  return <Navigate to="/login" />;
+  // Các trường hợp khác => hiển thị trang bình thường
+  return children;
 }
 
 function App() {
@@ -51,69 +109,83 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Customer routes */}
+          {/* Public routes - Trang chủ và chi tiết sân (ai cũng xem được) */}
           <Route
             path="/"
             element={
-              <div className="d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
-                  <HomePage />
-                </main>
-                <Footer />
-              </div>
+              <PublicRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <HomePage />
+                  </main>
+                  <Footer />
+                </div>
+              </PublicRoute>
             }
           />
           <Route
             path="/pitch/:id"
             element={
-              <div className="d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
-                  <PitchDetailPage />
-                </main>
-                <Footer />
-              </div>
+              <PublicRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <PitchDetailPage />
+                  </main>
+                  <Footer />
+                </div>
+              </PublicRoute>
             }
           />
-          <Route
-            path="/my-bookings"
-            element={
-              <div className="d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
-                  <MyBookingsPage />
-                </main>
-                <Footer />
-              </div>
-            }
-          />
+
+          {/* Auth routes - Login/Register */}
           <Route
             path="/login"
             element={
-              <div className="d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
-                  <LoginPage />
-                </main>
-                <Footer />
-              </div>
+              <PublicRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <LoginPage />
+                  </main>
+                  <Footer />
+                </div>
+              </PublicRoute>
             }
           />
           <Route
             path="/register"
             element={
-              <div className="d-flex flex-column min-vh-100">
-                <Header />
-                <main className="flex-grow-1">
-                  <RegisterPage />
-                </main>
-                <Footer />
-              </div>
+              <PublicRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <RegisterPage />
+                  </main>
+                  <Footer />
+                </div>
+              </PublicRoute>
             }
           />
 
-          {/* Admin routes */}
+          {/* Protected Client routes - CHỈ CLIENT */}
+          <Route
+            path="/my-bookings"
+            element={
+              <ProtectedClientRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <MyBookingsPage />
+                  </main>
+                  <Footer />
+                </div>
+              </ProtectedClientRoute>
+            }
+          />
+
+          {/* Admin routes - CHỈ ADMIN */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
@@ -164,14 +236,32 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
-          <Route path="/admin/settings" element={<SettingsPage />} />
-
           <Route
             path="/admin/settings"
             element={
               <ProtectedAdminRoute>
-                <AdminDashboard />
+                <SettingsPage />
               </ProtectedAdminRoute>
+            }
+          />
+
+          {/* 404 Not Found */}
+          <Route
+            path="*"
+            element={
+              <div className="d-flex flex-column min-vh-100">
+                <Header />
+                <main className="flex-grow-1 d-flex justify-content-center align-items-center">
+                  <div className="text-center">
+                    <h1 className="display-1">404</h1>
+                    <p className="lead">Trang không tồn tại</p>
+                    <a href="/" className="btn btn-primary">
+                      Về trang chủ
+                    </a>
+                  </div>
+                </main>
+                <Footer />
+              </div>
             }
           />
         </Routes>
