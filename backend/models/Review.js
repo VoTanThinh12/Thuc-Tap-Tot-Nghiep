@@ -1,31 +1,30 @@
 const db = require("../config/database");
 
 class Review {
-  // Tạo đánh giá mới
   static async create(reviewData) {
     const { booking_id, user_id, pitch_id, rating, comment } = reviewData;
-
     const query = `
       INSERT INTO reviews (booking_id, user_id, pitch_id, rating, comment)
       VALUES (?, ?, ?, ?, ?)
     `;
-
     const [result] = await db.execute(query, [
       booking_id,
       user_id,
       pitch_id,
       rating,
-      comment,
+      comment || "",
     ]);
     return result.insertId;
   }
 
-  // Lấy đánh giá theo sân (với phân trang)
   static async getByPitchId(pitch_id, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
-
     const query = `
-      SELECT r.*, u.full_name as user_name, u.email, u.avatar
+      SELECT r.*, 
+             u.fullname as user_name, 
+             u.email, 
+             u.avatar,
+             DATE_FORMAT(r.created_at, '%d/%m/%Y %H:%i') as formatted_date
       FROM reviews r
       JOIN users u ON r.user_id = u.id
       WHERE r.pitch_id = ?
@@ -34,7 +33,6 @@ class Review {
     `;
     const [rows] = await db.execute(query, [pitch_id, limit, offset]);
 
-    // Đếm tổng số reviews
     const [countResult] = await db.execute(
       "SELECT COUNT(*) as total FROM reviews WHERE pitch_id = ?",
       [pitch_id]
@@ -48,25 +46,61 @@ class Review {
     };
   }
 
-  // Lấy tất cả đánh giá (Admin)
-  static async getAll(page = 1, limit = 20) {
+  static async getAll(page = 1, limit = 20, filters = {}) {
     const offset = (page - 1) * limit;
+    let whereConditions = [];
+    let queryParams = [];
+
+    if (filters.pitch_id) {
+      whereConditions.push("r.pitch_id = ?");
+      queryParams.push(filters.pitch_id);
+    }
+    if (filters.rating) {
+      whereConditions.push("r.rating = ?");
+      queryParams.push(filters.rating);
+    }
+    if (filters.search) {
+      whereConditions.push(
+        "(u.fullname LIKE ? OR p.name LIKE ? OR r.comment LIKE ?)"
+      );
+      const searchTerm = `%${filters.search}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const whereClause =
+      whereConditions.length > 0
+        ? "WHERE " + whereConditions.join(" AND ")
+        : "";
 
     const query = `
       SELECT r.*, 
-             u.full_name as user_name, 
+             u.fullname as user_name, 
              u.email,
-             p.name as pitch_name
+             u.phone,
+             p.name as pitch_name,
+             p.type as pitch_type,
+             DATE_FORMAT(r.created_at, '%d/%m/%Y %H:%i') as formatted_date
       FROM reviews r
       JOIN users u ON r.user_id = u.id
       JOIN pitches p ON r.pitch_id = p.id
+      ${whereClause}
       ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await db.execute(query, [limit, offset]);
 
+    queryParams.push(limit, offset);
+    const [rows] = await db.execute(query, queryParams);
+
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      JOIN pitches p ON r.pitch_id = p.id
+      ${whereClause}
+    `;
     const [countResult] = await db.execute(
-      "SELECT COUNT(*) as total FROM reviews"
+      countQuery,
+      queryParams.slice(0, -2)
     );
 
     return {
@@ -77,11 +111,10 @@ class Review {
     };
   }
 
-  // Lấy điểm trung bình của sân
   static async getAverageRating(pitch_id) {
     const query = `
       SELECT 
-        ROUND(AVG(rating), 1) as average_rating, 
+        COALESCE(ROUND(AVG(rating), 1), 0) as average_rating, 
         COUNT(*) as total_reviews,
         SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
         SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
@@ -95,19 +128,20 @@ class Review {
     return rows[0];
   }
 
-  // Kiểm tra user đã đánh giá booking chưa
   static async checkUserReviewed(booking_id, user_id) {
     const query = "SELECT id FROM reviews WHERE booking_id = ? AND user_id = ?";
     const [rows] = await db.execute(query, [booking_id, user_id]);
     return rows.length > 0;
   }
 
-  // Lấy đánh giá của user
   static async getByUserId(user_id, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
-
     const query = `
-      SELECT r.*, p.name as pitch_name, p.image
+      SELECT r.*, 
+             p.name as pitch_name, 
+             p.type as pitch_type,
+             p.location,
+             DATE_FORMAT(r.created_at, '%d/%m/%Y %H:%i') as formatted_date
       FROM reviews r
       JOIN pitches p ON r.pitch_id = p.id
       WHERE r.user_id = ?
@@ -129,21 +163,36 @@ class Review {
     };
   }
 
-  // Cập nhật đánh giá
   static async update(id, user_id, reviewData) {
-    const { rating, comment } = reviewData;
+    const fields = [];
+    const values = [];
+
+    if (reviewData.rating !== undefined) {
+      fields.push("rating = ?");
+      values.push(reviewData.rating);
+    }
+    if (reviewData.comment !== undefined) {
+      fields.push("comment = ?");
+      values.push(reviewData.comment);
+    }
+
+    if (fields.length === 0) {
+      return false;
+    }
+
+    fields.push("updated_at = CURRENT_TIMESTAMP");
 
     const query = `
       UPDATE reviews 
-      SET rating = ?, comment = ?, updated_at = CURRENT_TIMESTAMP
+      SET ${fields.join(", ")}
       WHERE id = ? AND user_id = ?
     `;
 
-    const [result] = await db.execute(query, [rating, comment, id, user_id]);
+    values.push(id, user_id);
+    const [result] = await db.execute(query, values);
     return result.affectedRows > 0;
   }
 
-  // Xóa đánh giá (Admin hoặc chủ review)
   static async delete(id, user_id = null, isAdmin = false) {
     let query = "DELETE FROM reviews WHERE id = ?";
     let params = [id];
@@ -157,16 +206,36 @@ class Review {
     return result.affectedRows > 0;
   }
 
-  // Lấy review theo ID
   static async getById(id) {
     const query = `
-      SELECT r.*, u.full_name as user_name, p.name as pitch_name
+      SELECT r.*, 
+             u.fullname as user_name,
+             u.email,
+             u.phone,
+             p.name as pitch_name,
+             p.type as pitch_type,
+             p.location,
+             DATE_FORMAT(r.created_at, '%d/%m/%Y %H:%i') as formatted_date
       FROM reviews r
       JOIN users u ON r.user_id = u.id
       JOIN pitches p ON r.pitch_id = p.id
       WHERE r.id = ?
     `;
     const [rows] = await db.execute(query, [id]);
+    return rows[0];
+  }
+
+  // Thống kê tổng quan
+  static async getOverallStats() {
+    const query = `
+      SELECT 
+        COUNT(DISTINCT pitch_id) as reviewed_pitches,
+        COUNT(*) as total_reviews,
+        ROUND(AVG(rating), 1) as overall_rating,
+        SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) / COUNT(*) * 100 as positive_percentage
+      FROM reviews
+    `;
+    const [rows] = await db.execute(query);
     return rows[0];
   }
 }

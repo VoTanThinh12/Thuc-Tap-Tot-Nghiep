@@ -4,17 +4,16 @@ const Booking = require("../models/Booking");
 class ReviewController {
   // ============ CLIENT APIS ============
 
-  // Tạo đánh giá mới
   static async createReview(req, res) {
     try {
       const { booking_id, pitch_id, rating, comment } = req.body;
       const user_id = req.user.id;
 
-      // Validate
+      // Validate input
       if (!booking_id || !pitch_id || !rating) {
         return res.status(400).json({
           success: false,
-          message: "Vui lòng cung cấp đầy đủ thông tin",
+          message: "Vui lòng cung cấp đầy đủ thông tin đánh giá",
         });
       }
 
@@ -25,16 +24,22 @@ class ReviewController {
         });
       }
 
-      // Kiểm tra booking có tồn tại và thuộc về user
+      // Kiểm tra booking
       const booking = await Booking.getById(booking_id);
-      if (!booking || booking.user_id !== user_id) {
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy booking",
+        });
+      }
+
+      if (booking.user_id !== user_id) {
         return res.status(403).json({
           success: false,
           message: "Bạn không có quyền đánh giá booking này",
         });
       }
 
-      // Kiểm tra booking đã hoàn thành chưa
       if (booking.status !== "completed") {
         return res.status(400).json({
           success: false,
@@ -70,11 +75,11 @@ class ReviewController {
       res.status(500).json({
         success: false,
         message: "Lỗi server khi tạo đánh giá",
+        error: error.message,
       });
     }
   }
 
-  // Lấy đánh giá theo sân
   static async getReviewsByPitch(req, res) {
     try {
       const { pitch_id } = req.params;
@@ -100,7 +105,6 @@ class ReviewController {
     }
   }
 
-  // Lấy đánh giá của user hiện tại
   static async getMyReviews(req, res) {
     try {
       const user_id = req.user.id;
@@ -122,26 +126,34 @@ class ReviewController {
     }
   }
 
-  // Cập nhật đánh giá
   static async updateReview(req, res) {
     try {
       const { id } = req.params;
       const { rating, comment } = req.body;
       const user_id = req.user.id;
 
-      if (rating && (rating < 1 || rating > 5)) {
+      if (rating !== undefined && (rating < 1 || rating > 5)) {
         return res.status(400).json({
           success: false,
           message: "Đánh giá phải từ 1-5 sao",
         });
       }
 
-      const updated = await Review.update(id, user_id, { rating, comment });
-
-      if (!updated) {
+      // Kiểm tra review có tồn tại
+      const review = await Review.getById(id);
+      if (!review || review.user_id !== user_id) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy đánh giá hoặc bạn không có quyền chỉnh sửa",
+        });
+      }
+
+      const updated = await Review.update(id, user_id, { rating, comment });
+
+      if (!updated) {
+        return res.status(500).json({
+          success: false,
+          message: "Không thể cập nhật đánh giá",
         });
       }
 
@@ -158,7 +170,6 @@ class ReviewController {
     }
   }
 
-  // Xóa đánh giá (Client)
   static async deleteReview(req, res) {
     try {
       const { id } = req.params;
@@ -188,13 +199,18 @@ class ReviewController {
 
   // ============ ADMIN APIS ============
 
-  // Lấy tất cả đánh giá (Admin)
   static async getAllReviews(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
 
-      const result = await Review.getAll(page, limit);
+      const filters = {
+        pitch_id: req.query.pitch_id,
+        rating: req.query.rating,
+        search: req.query.search,
+      };
+
+      const result = await Review.getAll(page, limit, filters);
 
       res.json({
         success: true,
@@ -209,7 +225,31 @@ class ReviewController {
     }
   }
 
-  // Xóa đánh giá (Admin)
+  static async getReviewById(req, res) {
+    try {
+      const { id } = req.params;
+      const review = await Review.getById(id);
+
+      if (!review) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy đánh giá",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: review,
+      });
+    } catch (error) {
+      console.error("Error getting review:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi lấy thông tin đánh giá",
+      });
+    }
+  }
+
   static async deleteReviewAdmin(req, res) {
     try {
       const { id } = req.params;
@@ -236,7 +276,6 @@ class ReviewController {
     }
   }
 
-  // Lấy thống kê đánh giá (Admin)
   static async getReviewStats(req, res) {
     try {
       const { pitch_id } = req.params;
@@ -251,6 +290,23 @@ class ReviewController {
       res.status(500).json({
         success: false,
         message: "Lỗi server khi lấy thống kê",
+      });
+    }
+  }
+
+  static async getOverallStats(req, res) {
+    try {
+      const stats = await Review.getOverallStats();
+
+      res.json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      console.error("Error getting overall stats:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi lấy thống kê tổng quan",
       });
     }
   }

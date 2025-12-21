@@ -1,27 +1,45 @@
 const express = require("express");
 const router = express.Router();
 const ReviewController = require("../controllers/reviewController");
-const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
+// THAY ĐỔI DÒNG NÀY:
+const { authenticate, authorizeAdmin } = require("../middleware/auth");
 
 // ===== CLIENT ROUTES =====
-router.post("/", verifyToken, ReviewController.createReview);
-router.get("/pitch/:pitch_id", ReviewController.getReviewsByPitch); // Public
-router.get("/my-reviews", verifyToken, ReviewController.getMyReviews);
-router.put("/:id", verifyToken, ReviewController.updateReview);
-router.delete("/:id", verifyToken, ReviewController.deleteReview);
+router.post("/", authenticate, ReviewController.createReview);
+router.get("/pitch/:pitch_id", ReviewController.getReviewsByPitch);
+router.get("/my-reviews", authenticate, ReviewController.getMyReviews);
+router.put("/:id", authenticate, ReviewController.updateReview);
+router.delete("/:id", authenticate, ReviewController.deleteReview);
 
 // ===== ADMIN ROUTES =====
-router.get("/admin/all", verifyToken, isAdmin, ReviewController.getAllReviews);
+router.get(
+  "/admin/all",
+  authenticate,
+  authorizeAdmin,
+  ReviewController.getAllReviews
+);
+router.get(
+  "/admin/stats/overall",
+  authenticate,
+  authorizeAdmin,
+  ReviewController.getOverallStats
+);
+router.get(
+  "/admin/:id",
+  authenticate,
+  authorizeAdmin,
+  ReviewController.getReviewById
+);
 router.delete(
   "/admin/:id",
-  verifyToken,
-  isAdmin,
+  authenticate,
+  authorizeAdmin,
   ReviewController.deleteReviewAdmin
 );
 router.get(
   "/admin/stats/:pitch_id",
-  verifyToken,
-  isAdmin,
+  authenticate,
+  authorizeAdmin,
   ReviewController.getReviewStats
 );
 
