@@ -3,6 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { pitchAPI, bookingAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import ReviewList from "../components/Reviews/ReviewList";
+import StarRating from "../components/Reviews/StarRating";
+import reviewService from "../services/reviewService";
 
 const PitchDetailPage = () => {
   const { id } = useParams();
@@ -17,8 +20,13 @@ const PitchDetailPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [checkingSlots, setCheckingSlots] = useState(false);
 
+  // State cho đánh giá
+  const [reviewStats, setReviewStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   useEffect(() => {
     loadPitchDetail();
+    loadReviewStats();
   }, [id]);
 
   useEffect(() => {
@@ -39,6 +47,19 @@ const PitchDetailPage = () => {
       console.error("Error loading pitch:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load thống kê đánh giá
+  const loadReviewStats = async () => {
+    setLoadingStats(true);
+    try {
+      const response = await reviewService.getReviewsByPitch(id, 1, 1);
+      setReviewStats(response.data.stats);
+    } catch (error) {
+      console.error("Error loading review stats:", error);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -196,7 +217,7 @@ const PitchDetailPage = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 mb-5">
       <div className="row">
         {/* Hình ảnh sân */}
         <div className="col-md-6">
@@ -219,6 +240,16 @@ const PitchDetailPage = () => {
             <span className="badge bg-primary me-2">{pitch.type}</span>
             <span>📍 {pitch.location}</span>
           </p>
+
+          {/* Hiển thị đánh giá trung bình */}
+          {reviewStats && reviewStats.total_reviews > 0 && (
+            <div className="mb-3">
+              <StarRating rating={reviewStats.average_rating || 0} size={20} />
+              <span className="ms-2 text-muted">
+                ({reviewStats.total_reviews} đánh giá)
+              </span>
+            </div>
+          )}
 
           <hr />
 
@@ -348,6 +379,22 @@ const PitchDetailPage = () => {
                   )}
                 </button>
               </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION ĐÁNH GIÁ */}
+      <div className="row mt-5">
+        <div className="col-12">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h3 className="card-title mb-4">
+                <i className="bi bi-star-fill text-warning me-2"></i>
+                Đánh giá & Nhận xét
+              </h3>
+              <hr />
+              <ReviewList pitchId={id} />
             </div>
           </div>
         </div>

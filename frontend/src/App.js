@@ -25,6 +25,8 @@ import CustomersManagement from "./pages/admin/CustomersManagement";
 import ServicesManagement from "./pages/admin/ServicesManagement";
 import ReportsPage from "./pages/admin/ReportsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import ReviewManagement from "./pages/admin/ReviewManagement";
+import PitchReviewStats from "./pages/admin/PitchReviewStats";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
@@ -138,7 +140,6 @@ function App() {
               </PublicRoute>
             }
           />
-
           {/* Auth routes - Login/Register */}
           <Route
             path="/login"
@@ -168,7 +169,6 @@ function App() {
               </PublicRoute>
             }
           />
-
           {/* Protected Client routes - CHỈ CLIENT */}
           <Route
             path="/my-bookings"
@@ -184,7 +184,6 @@ function App() {
               </ProtectedClientRoute>
             }
           />
-
           {/* Admin routes - CHỈ ADMIN */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -244,7 +243,9 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
-
+          {/* // Trong phần routes của admin */}
+          <Route path="/admin/reviews" element={<ReviewManagement />} />
+          <Route path="/admin/review-stats" element={<PitchReviewStats />} />
           {/* 404 Not Found */}
           <Route
             path="*"
