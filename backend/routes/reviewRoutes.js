@@ -3,14 +3,14 @@ const router = express.Router();
 const ReviewController = require("../controllers/reviewController");
 const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
 
-// Client routes
+// ===== CLIENT ROUTES =====
 router.post("/", verifyToken, ReviewController.createReview);
 router.get("/pitch/:pitch_id", ReviewController.getReviewsByPitch); // Public
 router.get("/my-reviews", verifyToken, ReviewController.getMyReviews);
 router.put("/:id", verifyToken, ReviewController.updateReview);
 router.delete("/:id", verifyToken, ReviewController.deleteReview);
 
-// Admin routes
+// ===== ADMIN ROUTES =====
 router.get("/admin/all", verifyToken, isAdmin, ReviewController.getAllReviews);
 router.delete(
   "/admin/:id",
