@@ -10,6 +10,10 @@ const customerController = require("../controllers/adminCustomerController");
 const serviceController = require("../controllers/adminServiceController");
 const reportController = require("../controllers/adminReportController");
 const settingsController = require("../controllers/adminSettingsController"); // ✅ THÊM DÒNG NÀY
+const {
+  PitchImageController,
+  upload,
+} = require("../controllers/pitchImageController");
 
 // === AUTH ROUTES (KHÔNG CẦN ĐĂNG NHẬP) ===
 router.post("/auth/login", authController.login);
@@ -100,5 +104,22 @@ router.post(
   adminAuth,
   settingsController.logoutAllSessions
 );
+
+// Pitch Images (Admin)
+router.get("/pitch-images", adminAuth, PitchImageController.getAll);
+router.post("/pitch-images/link", adminAuth, PitchImageController.createByUrl);
+router.post(
+  "/pitch-images/upload",
+  adminAuth,
+  upload.single("image"),
+  PitchImageController.uploadImage
+);
+router.put(
+  "/pitch-images/:id/primary",
+  adminAuth,
+  PitchImageController.setPrimary
+);
+router.put("/pitch-images/:id", adminAuth, PitchImageController.update);
+router.delete("/pitch-images/:id", adminAuth, PitchImageController.delete);
 
 module.exports = router;

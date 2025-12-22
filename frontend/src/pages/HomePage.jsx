@@ -48,7 +48,7 @@ const HomePage = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 home-page">
       {/* Banner */}
       <div className="jumbotron bg-success text-white p-5 rounded mb-4">
         <h1 className="display-4">🏟️ Đặt Sân Bóng Mini Nhanh Chóng</h1>

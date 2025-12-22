@@ -3,6 +3,8 @@ import { bookingAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import ReviewForm from "../components/Reviews/ReviewForm";
+import reviewService from "../services/reviewService";
 
 const MyBookingsPage = () => {
   const { user } = useContext(AuthContext);
@@ -10,12 +12,19 @@ const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewByBookingId, setReviewByBookingId] = useState({});
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [existingReview, setExistingReview] = useState(null);
+
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
     loadMyBookings();
+    loadMyReviews();
   }, [user, navigate]);
 
   const loadMyBookings = async () => {
@@ -26,6 +35,23 @@ const MyBookingsPage = () => {
       toast.error("Không thể tải danh sách đơn đặt");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMyReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const response = await reviewService.getMyReviews(1, 200);
+      const list = response?.data?.data?.reviews || [];
+      const map = {};
+      for (const r of list) {
+        if (r?.booking_id) map[String(r.booking_id)] = r;
+      }
+      setReviewByBookingId(map);
+    } catch (error) {
+      setReviewByBookingId({});
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -57,6 +83,28 @@ const MyBookingsPage = () => {
     return <span className={`badge bg-${badgeClass}`}>{text}</span>;
   };
 
+  const handleOpenReview = (booking) => {
+    if (!user) {
+      toast.warning("Vui lòng đăng nhập để đánh giá");
+      navigate("/login");
+      return;
+    }
+
+    if (!booking || booking.status !== "completed") {
+      toast.error("Chỉ có thể đánh giá sau khi đơn đặt hoàn thành");
+      return;
+    }
+
+    const existing = reviewByBookingId[String(booking.id)] || null;
+    setSelectedBooking(booking);
+    setExistingReview(existing);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSuccess = async () => {
+    await loadMyReviews();
+  };
+
   if (loading) {
     return (
       <div className="container text-center mt-5">
@@ -68,7 +116,7 @@ const MyBookingsPage = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 my-bookings-page">
       <h2 className="mb-4">📋 Đơn đặt sân của tôi</h2>
 
       {bookings.length === 0 ? (
@@ -117,6 +165,18 @@ const MyBookingsPage = () => {
                         Hủy
                       </button>
                     )}
+
+                    {booking.status === "completed" && (
+                      <button
+                        className="btn btn-sm btn-warning"
+                        onClick={() => handleOpenReview(booking)}
+                        disabled={loadingReviews}
+                      >
+                        {reviewByBookingId[String(booking.id)]
+                          ? "Sửa đánh giá"
+                          : "Đánh giá"}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -124,6 +184,22 @@ const MyBookingsPage = () => {
           </table>
         </div>
       )}
+
+      <ReviewForm
+        show={showReviewModal}
+        onHide={() => setShowReviewModal(false)}
+        booking={
+          selectedBooking
+            ? {
+                id: selectedBooking.id,
+                pitch_id: selectedBooking.pitch_id,
+                pitch_name: selectedBooking.pitch_name,
+              }
+            : null
+        }
+        existingReview={existingReview}
+        onSuccess={handleReviewSuccess}
+      />
     </div>
   );
 };

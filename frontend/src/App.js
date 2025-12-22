@@ -13,6 +13,7 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import PitchDetailPage from "./pages/PitchDetailPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import AccountPage from "./pages/AccountPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
@@ -27,6 +28,8 @@ import ReportsPage from "./pages/admin/ReportsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import ReviewManagement from "./pages/admin/ReviewManagement";
 import PitchReviewStats from "./pages/admin/PitchReviewStats";
+import ImageManagement from "./pages/admin/ImageManagement";
+import ReviewCenter from "./pages/admin/ReviewCenter";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
@@ -184,6 +187,20 @@ function App() {
               </ProtectedClientRoute>
             }
           />
+          <Route
+            path="/account"
+            element={
+              <ProtectedClientRoute>
+                <div className="d-flex flex-column min-vh-100">
+                  <Header />
+                  <main className="flex-grow-1">
+                    <AccountPage />
+                  </main>
+                  <Footer />
+                </div>
+              </ProtectedClientRoute>
+            }
+          />
           {/* Admin routes - CHỈ ADMIN */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -244,8 +261,30 @@ function App() {
             }
           />
           {/* // Trong phần routes của admin */}
-          <Route path="/admin/reviews" element={<ReviewManagement />} />
-          <Route path="/admin/review-stats" element={<PitchReviewStats />} />
+          <Route
+            path="/admin/reviews"
+            element={
+              <ProtectedAdminRoute>
+                <ReviewCenter />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/review-stats"
+            element={
+              <ProtectedAdminRoute>
+                <Navigate to="/admin/reviews" replace />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/images"
+            element={
+              <ProtectedAdminRoute>
+                <ImageManagement />
+              </ProtectedAdminRoute>
+            }
+          />
           {/* 404 Not Found */}
           <Route
             path="*"

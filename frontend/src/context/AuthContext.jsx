@@ -7,6 +7,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshProfile = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    const res = await authAPI.getProfile();
+    setUser(res.data.user);
+  };
+
   // Kiểm tra token khi load trang
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -37,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

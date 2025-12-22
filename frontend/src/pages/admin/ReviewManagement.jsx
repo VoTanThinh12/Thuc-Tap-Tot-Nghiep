@@ -45,9 +45,10 @@ const ReviewManagement = () => {
     setLoading(true);
     try {
       const response = await reviewService.getAllReviews(currentPage, 20);
-      setReviews(response.data.reviews);
-      setTotalPages(response.data.totalPages);
-      setTotalReviews(response.data.total);
+      const payload = response?.data?.data;
+      setReviews(payload?.reviews || []);
+      setTotalPages(payload?.totalPages || 1);
+      setTotalReviews(payload?.total || 0);
     } catch (error) {
       toast.error("Không thể tải danh sách đánh giá");
       console.error("Error loading reviews:", error);
@@ -142,7 +143,7 @@ const ReviewManagement = () => {
             <FaStar className="text-warning me-2" />
             Quản lý đánh giá
           </h2>
-          <p className="text-muted">Quản lý tất cả đánh giá từ khách hàng</p>
+          <p className="text-muted">Xem, tìm kiếm và quản lý đánh giá của khách hàng</p>
         </Col>
       </Row>
 
@@ -372,99 +373,117 @@ const ReviewManagement = () => {
       </Card>
 
       {/* Detail Modal */}
-      <Modal
-        show={showDetailModal}
-        onHide={() => setShowDetailModal(false)}
-        size="lg"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Chi tiết đánh giá #{selectedReview?.id}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedReview && (
-            <div>
-              <Row className="mb-3">
-                <Col md={6}>
-                  <h6 className="text-muted">Khách hàng</h6>
-                  <p className="mb-0">
-                    <strong>{selectedReview.user_name}</strong>
-                    <br />
-                    <small className="text-muted">{selectedReview.email}</small>
-                  </p>
-                </Col>
-                <Col md={6}>
-                  <h6 className="text-muted">Sân bóng</h6>
-                  <p className="mb-0">
-                    <strong>{selectedReview.pitch_name}</strong>
-                  </p>
-                </Col>
-              </Row>
-
-              <Row className="mb-3">
-                <Col md={6}>
-                  <h6 className="text-muted">Đánh giá</h6>
-                  <StarRating rating={selectedReview.rating} size={24} />
-                </Col>
-                <Col md={6}>
-                  <h6 className="text-muted">Booking ID</h6>
-                  <p className="mb-0">#{selectedReview.booking_id}</p>
-                </Col>
-              </Row>
-
-              <Row className="mb-3">
-                <Col>
-                  <h6 className="text-muted">Nhận xét</h6>
-                  {selectedReview.comment ? (
-                    <Card className="bg-light border-0">
-                      <Card.Body>
-                        <p className="mb-0">{selectedReview.comment}</p>
-                      </Card.Body>
-                    </Card>
-                  ) : (
-                    <p className="text-muted">Không có nhận xét</p>
-                  )}
-                </Col>
-              </Row>
-
-              <Row>
-                <Col md={6}>
-                  <h6 className="text-muted">Ngày tạo</h6>
-                  <p className="mb-0">
-                    {formatDate(selectedReview.created_at)}
-                  </p>
-                </Col>
-                <Col md={6}>
-                  <h6 className="text-muted">Cập nhật lần cuối</h6>
-                  <p className="mb-0">
-                    {formatDate(selectedReview.updated_at)}
-                  </p>
-                </Col>
-              </Row>
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
-            Đóng
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              setShowDetailModal(false);
-              handleDeleteClick(selectedReview);
-            }}
+      {showDetailModal && (
+        <div
+          className="admin-detail-modal-overlay"
+          onClick={() => setShowDetailModal(false)}
+        >
+          <div
+            className="admin-detail-modal-content"
+            onClick={(e) => e.stopPropagation()}
           >
-            <FaTrash /> Xóa đánh giá
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <div className="admin-detail-modal-header">
+              <h2>Chi tiết đánh giá #{selectedReview?.id}</h2>
+              <button
+                className="admin-detail-modal-close"
+                onClick={() => setShowDetailModal(false)}
+                type="button"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="admin-detail-modal-body no-scroll">
+              {selectedReview && (
+                <div>
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <h6 className="text-muted">Khách hàng</h6>
+                      <p className="mb-0">
+                        <strong>{selectedReview.user_name}</strong>
+                        <br />
+                        <small className="text-muted">{selectedReview.email}</small>
+                      </p>
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Sân bóng</h6>
+                      <p className="mb-0">
+                        <strong>{selectedReview.pitch_name}</strong>
+                      </p>
+                    </Col>
+                  </Row>
+
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <h6 className="text-muted">Đánh giá</h6>
+                      <StarRating rating={selectedReview.rating} size={24} />
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Booking ID</h6>
+                      <p className="mb-0">#{selectedReview.booking_id}</p>
+                    </Col>
+                  </Row>
+
+                  <Row className="mb-3">
+                    <Col>
+                      <h6 className="text-muted">Nhận xét</h6>
+                      {selectedReview.comment ? (
+                        <Card className="bg-light border-0">
+                          <Card.Body>
+                            <p className="mb-0">{selectedReview.comment}</p>
+                          </Card.Body>
+                        </Card>
+                      ) : (
+                        <p className="text-muted">Không có nhận xét</p>
+                      )}
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col md={6}>
+                      <h6 className="text-muted">Ngày tạo</h6>
+                      <p className="mb-0">{formatDate(selectedReview.created_at)}</p>
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Cập nhật lần cuối</h6>
+                      <p className="mb-0">{formatDate(selectedReview.updated_at)}</p>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+            </div>
+
+            <div className="admin-detail-modal-footer">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => {
+                  setShowDetailModal(false);
+                  handleDeleteClick(selectedReview);
+                }}
+              >
+                <FaTrash className="me-2" /> Xóa đánh giá
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <Modal
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         centered
+        contentClassName="admin-modal-dark"
+        dialogClassName="admin-modal-dark-dialog"
       >
         <Modal.Header closeButton>
           <Modal.Title>Xác nhận xóa</Modal.Title>

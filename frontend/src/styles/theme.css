@@ -59,6 +59,32 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.client-brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.client-brand-fallback {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.client-brand-text {
+  font-weight: 700;
+}
+
 /* ==================== ADMIN LAYOUT BASE ==================== */
 .admin-layout {
   background: var(--bg-primary);
@@ -107,4 +133,462 @@ body {
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease,
     color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-layout {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.admin-layout .admin-content {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.admin-layout .text-muted {
+  color: var(--text-muted) !important;
+}
+
+.admin-layout .card {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-layout .card .card-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-layout .table {
+  color: var(--text-primary);
+}
+
+.admin-layout .table > :not(caption) > * > * {
+  background-color: transparent;
+  border-bottom-color: var(--border-color);
+}
+
+.admin-layout .table thead {
+  background: var(--bg-secondary);
+}
+
+.admin-layout .table thead th {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border-color);
+}
+
+.admin-layout .table-hover tbody tr:hover {
+  color: var(--text-primary);
+}
+
+.admin-layout .table-hover tbody tr:hover > * {
+  background: var(--bg-hover);
+}
+
+.admin-layout .form-control,
+.admin-layout .form-select,
+.admin-layout .input-group-text {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.admin-layout .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.admin-layout .form-control:focus,
+.admin-layout .form-select:focus {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(34, 200, 134, 0.15);
+}
+
+.admin-layout .modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.admin-layout .modal-header,
+.admin-layout .modal-footer {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.admin-layout .btn-close {
+  filter: invert(1) grayscale(100%);
+}
+
+.admin-layout .nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-layout .nav-tabs .nav-link {
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+.admin-layout .nav-tabs .nav-link:hover {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.admin-layout .nav-tabs .nav-link.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color) var(--border-color) transparent;
+}
+
+.admin-layout .pagination .page-link {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.admin-layout .pagination .page-link:hover {
+  background: var(--bg-hover);
+}
+
+.admin-layout .pagination .page-item.active .page-link {
+  background: rgba(34, 200, 134, 0.15);
+  border-color: rgba(34, 200, 134, 0.4);
+  color: var(--text-primary);
+}
+
+.admin-layout .bg-light {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.admin-layout .alert {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.admin-layout .dropdown-menu {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.admin-layout .dropdown-item {
+  color: var(--text-primary);
+}
+
+.admin-layout .dropdown-item:hover {
+  background: var(--bg-hover);
+}
+
+.admin-modal-dark {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 20px !important;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-modal-dark .modal-header,
+.admin-modal-dark .modal-footer {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.admin-modal-dark .text-muted,
+.admin-modal-dark small.text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.admin-modal-dark .bg-light {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.admin-modal-dark .card {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.admin-modal-dark .btn-close {
+  filter: invert(1) grayscale(100%);
+}
+
+.admin-modal-dark-dialog {
+  max-width: 600px;
+}
+
+.admin-modal-dark .modal-header {
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 2px solid var(--border-color) !important;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.admin-modal-dark .modal-title {
+  color: var(--text-primary);
+}
+
+.admin-modal-dark .modal-body {
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+.admin-modal-dark * {
+  word-break: break-word;
+}
+
+.admin-modal-dark .modal-footer {
+  padding: 20px 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 2px solid var(--border-color) !important;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.admin-modal-dark .btn-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.admin-modal-dark .btn-close:hover {
+  background: var(--bg-hover);
+  transform: rotate(90deg);
+}
+
+.admin-detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.admin-detail-modal-content {
+  background: var(--bg-card);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.admin-detail-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.admin-detail-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.admin-detail-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-detail-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.admin-detail-modal-body {
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+.admin-detail-modal-body.no-scroll {
+  overflow: visible;
+}
+
+.admin-detail-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+html:not([data-theme="light"]) .table,
+html:not([data-theme="light"]) .table td,
+html:not([data-theme="light"]) .table th {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .my-bookings-page h2 {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .table {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .table > :not(caption) > * > * {
+  background-color: transparent;
+  border-bottom-color: var(--border-color);
+}
+
+/* Override bootstrap "table-success" header (too bright on dark) */
+html:not([data-theme="light"]) .my-bookings-page .table thead.table-success,
+html:not([data-theme="light"]) .my-bookings-page .table thead {
+  background: var(--bg-secondary);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .table thead th {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border-color);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .table-hover > tbody > tr:hover > * {
+  background: var(--bg-hover);
+}
+
+html:not([data-theme="light"]) .my-bookings-page .alert {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+html:not([data-theme="light"]) .my-bookings-page a {
+  color: var(--primary-color);
+}
+
+html:not([data-theme="light"]) .account-page h2 {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .account-page .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+html:not([data-theme="light"]) .account-page .card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .account-page .card-title {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .account-page .form-label {
+  color: var(--text-secondary);
+}
+
+html:not([data-theme="light"]) .account-page .form-control {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .account-page .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html:not([data-theme="light"]) .account-page .form-control:focus {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+html:not([data-theme="light"]) .account-page .form-control:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+html:not([data-theme="light"]) .home-page h3,
+html:not([data-theme="light"]) .home-page h5 {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .home-page .jumbotron {
+  box-shadow: var(--shadow-md);
+}
+
+html:not([data-theme="light"]) .home-page .card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .home-page .card-body {
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .home-page .form-control,
+html:not([data-theme="light"]) .home-page .form-select {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+html:not([data-theme="light"]) .home-page .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html:not([data-theme="light"]) .home-page .form-control:focus,
+html:not([data-theme="light"]) .home-page .form-select:focus {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+html:not([data-theme="light"]) .home-page .card .text-success {
+  color: var(--primary-color) !important;
+}
+
+html:not([data-theme="light"]) .home-page .card .badge.bg-primary {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+html:not([data-theme="light"]) .home-page .card .card-title,
+html:not([data-theme="light"]) .home-page .card .card-text {
+  color: var(--text-primary);
 }

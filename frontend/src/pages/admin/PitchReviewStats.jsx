@@ -47,7 +47,7 @@ const PitchReviewStats = () => {
     setLoading(true);
     try {
       const response = await reviewService.getReviewStats(selectedPitchId);
-      setStats(response.data);
+      setStats(response?.data?.data || null);
     } catch (error) {
       toast.error("Không thể tải thống kê");
       console.error("Error loading stats:", error);

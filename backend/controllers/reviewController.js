@@ -1,6 +1,15 @@
 const Review = require("../models/Review");
 const Booking = require("../models/Booking");
 
+async function refreshPitchRatingStats(pitch_id) {
+  const stats = await Review.getAverageRating(pitch_id);
+  const db = require("../config/database");
+  await db.query(
+    "UPDATE pitches SET average_rating = ?, total_reviews = ? WHERE id = ?",
+    [stats.average_rating || 0, stats.total_reviews || 0, pitch_id]
+  );
+}
+
 class ReviewController {
   // ============ CLIENT APIS ============
 
@@ -33,7 +42,14 @@ class ReviewController {
         });
       }
 
-      if (booking.user_id !== user_id) {
+      const isOwnerByUserId = String(booking.user_id) === String(user_id);
+      const isOwnerByEmail =
+        !!req.user?.email &&
+        !!booking.customer_email &&
+        String(booking.customer_email).toLowerCase() ===
+          String(req.user.email).toLowerCase();
+
+      if (!isOwnerByUserId && !isOwnerByEmail) {
         return res.status(403).json({
           success: false,
           message: "Bạn không có quyền đánh giá booking này",
@@ -49,10 +65,34 @@ class ReviewController {
 
       // Kiểm tra đã đánh giá chưa
       const hasReviewed = await Review.checkUserReviewed(booking_id, user_id);
+
       if (hasReviewed) {
-        return res.status(400).json({
-          success: false,
-          message: "Bạn đã đánh giá booking này rồi",
+        const existing = await Review.getByBookingAndUser(booking_id, user_id);
+        if (!existing) {
+          return res.status(400).json({
+            success: false,
+            message: "Bạn đã đánh giá booking này rồi",
+          });
+        }
+
+        const updated = await Review.update(existing.id, user_id, {
+          rating,
+          comment: comment || "",
+        });
+
+        if (!updated) {
+          return res.status(500).json({
+            success: false,
+            message: "Không thể cập nhật đánh giá",
+          });
+        }
+
+        await refreshPitchRatingStats(pitch_id);
+
+        return res.json({
+          success: true,
+          message: "Cập nhật đánh giá thành công",
+          data: { id: existing.id },
         });
       }
 
@@ -64,6 +104,8 @@ class ReviewController {
         rating,
         comment: comment || "",
       });
+
+      await refreshPitchRatingStats(pitch_id);
 
       res.status(201).json({
         success: true,
@@ -157,6 +199,8 @@ class ReviewController {
         });
       }
 
+      await refreshPitchRatingStats(review.pitch_id);
+
       res.json({
         success: true,
         message: "Cập nhật đánh giá thành công",
@@ -175,6 +219,14 @@ class ReviewController {
       const { id } = req.params;
       const user_id = req.user.id;
 
+      const review = await Review.getById(id);
+      if (!review || review.user_id !== user_id) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy đánh giá hoặc bạn không có quyền xóa",
+        });
+      }
+
       const deleted = await Review.delete(id, user_id, false);
 
       if (!deleted) {
@@ -183,6 +235,8 @@ class ReviewController {
           message: "Không tìm thấy đánh giá hoặc bạn không có quyền xóa",
         });
       }
+
+      await refreshPitchRatingStats(review.pitch_id);
 
       res.json({
         success: true,
@@ -254,6 +308,14 @@ class ReviewController {
     try {
       const { id } = req.params;
 
+      const review = await Review.getById(id);
+      if (!review) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy đánh giá",
+        });
+      }
+
       const deleted = await Review.delete(id, null, true);
 
       if (!deleted) {
@@ -262,6 +324,8 @@ class ReviewController {
           message: "Không tìm thấy đánh giá",
         });
       }
+
+      await refreshPitchRatingStats(review.pitch_id);
 
       res.json({
         success: true,

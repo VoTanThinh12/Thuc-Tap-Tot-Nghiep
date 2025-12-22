@@ -1,4 +1,5 @@
 const db = require("../config/database");
+const bcrypt = require("bcryptjs");
 
 // Get all settings
 exports.getSettings = async (req, res) => {
@@ -132,29 +133,47 @@ exports.updateSettings = async (req, res) => {
 // Change password (giữ nguyên)
 exports.changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-    const adminId = req.admin.id;
+    const currentPassword = req.body.currentPassword || req.body.oldPassword;
+    const { newPassword } = req.body;
+    const adminId = req.user?.id;
 
-    const [admin] = await db.query("SELECT password FROM admins WHERE id = ?", [
-      adminId,
-    ]);
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Không xác định được admin",
+      });
+    }
 
-    if (!admin[0]) {
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu mật khẩu hiện tại hoặc mật khẩu mới",
+      });
+    }
+
+    const [[user]] = await db.query(
+      "SELECT id, password, role FROM users WHERE id = ? LIMIT 1",
+      [adminId]
+    );
+
+    if (!user || user.role !== "admin") {
       return res.status(404).json({
         success: false,
         message: "Admin không tồn tại",
       });
     }
 
-    if (admin[0].password !== currentPassword) {
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
       return res.status(400).json({
         success: false,
         message: "Mật khẩu hiện tại không đúng",
       });
     }
 
-    await db.query("UPDATE admins SET password = ? WHERE id = ?", [
-      newPassword,
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query("UPDATE users SET password = ? WHERE id = ?", [
+      hashedPassword,
       adminId,
     ]);
 

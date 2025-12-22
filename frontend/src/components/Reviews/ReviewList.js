@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Alert, Spinner, Pagination } from "react-bootstrap";
 import { FaUser } from "react-icons/fa";
-import axios from "axios";
+import api from "../../services/api";
 import StarRating from "./StarRating";
 
 const ReviewList = ({ pitchId }) => {
@@ -21,23 +21,23 @@ const ReviewList = ({ pitchId }) => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.get(
-        `http://localhost:5000/api/reviews/pitch/${pitchId}?page=${currentPage}&limit=5`
+      const response = await api.get(
+        `/reviews/pitch/${pitchId}?page=${currentPage}&limit=5`
       );
 
       if (response.data.success) {
         setReviews(response.data.data.reviews || []);
-        setStats(
-          response.data.data.stats || {
-            average_rating: 0,
-            total_reviews: 0,
-            five_star: 0,
-            four_star: 0,
-            three_star: 0,
-            two_star: 0,
-            one_star: 0,
-          }
-        );
+
+        const rawStats = response.data.data.stats || {};
+        setStats({
+          average_rating: Number(rawStats.average_rating) || 0,
+          total_reviews: Number(rawStats.total_reviews) || 0,
+          five_star: Number(rawStats.five_star) || 0,
+          four_star: Number(rawStats.four_star) || 0,
+          three_star: Number(rawStats.three_star) || 0,
+          two_star: Number(rawStats.two_star) || 0,
+          one_star: Number(rawStats.one_star) || 0,
+        });
         setTotalPages(response.data.data.totalPages || 1);
       }
     } catch (err) {
@@ -77,9 +77,9 @@ const ReviewList = ({ pitchId }) => {
       <div className="mb-4">
         <div className="d-flex align-items-center mb-3">
           <div className="text-center me-4">
-            <h2 className="mb-0">{stats.average_rating.toFixed(1)}</h2>
+            <h2 className="mb-0">{(Number(stats.average_rating) || 0).toFixed(1)}</h2>
             <StarRating
-              rating={stats.average_rating}
+              rating={Number(stats.average_rating) || 0}
               size={20}
               showNumber={false}
             />

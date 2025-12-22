@@ -1,13 +1,13 @@
-const db = require('../config/database');
+const db = require("../config/database");
 
 class Booking {
   // Tạo đơn đặt sân mới
   static async create(bookingData) {
-    const { 
-      user_id, 
-      pitch_id, 
-      timeslot_id, 
-      booking_date, 
+    const {
+      user_id,
+      pitch_id,
+      timeslot_id,
+      booking_date,
       start_time,
       end_time,
       total_price,
@@ -15,12 +15,12 @@ class Booking {
       customer_name,
       customer_phone,
       customer_email,
-      notes
+      notes,
     } = bookingData;
-    
+
     // Tạo mã booking ngẫu nhiên
-    const booking_code = 'BK' + Date.now() + Math.floor(Math.random() * 1000);
-    
+    const booking_code = "BK" + Date.now() + Math.floor(Math.random() * 1000);
+
     const query = `
       INSERT INTO bookings (
         booking_code, user_id, pitch_id, timeslot_id, booking_date, 
@@ -29,12 +29,12 @@ class Booking {
       ) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `;
-    
+
     const [result] = await db.execute(query, [
       booking_code,
-      user_id, 
-      pitch_id, 
-      timeslot_id, 
+      user_id,
+      pitch_id,
+      timeslot_id,
       booking_date,
       start_time,
       end_time,
@@ -43,10 +43,14 @@ class Booking {
       customer_name,
       customer_phone,
       customer_email,
-      notes
+      notes,
     ]);
-    
+
     return { id: result.insertId, booking_code };
+  }
+
+  static async getById(id) {
+    return Booking.findById(id);
   }
 
   // Lấy đơn đặt theo ID
@@ -55,31 +59,32 @@ class Booking {
       SELECT b.*, 
              u.full_name as user_name, u.phone as user_phone, u.email as user_email,
              p.name as pitch_name, p.location, p.address,
-             t.date, t.start_time, t.end_time
+             b.booking_date as date, b.start_time, b.end_time
       FROM bookings b
-      JOIN users u ON b.user_id = u.id
+      LEFT JOIN users u ON b.user_id = u.id
       JOIN pitches p ON b.pitch_id = p.id
-      JOIN timeslots t ON b.timeslot_id = t.id
       WHERE b.id = ?
     `;
-    
+
     const [rows] = await db.execute(query, [id]);
     return rows[0];
   }
 
   // Lấy tất cả đơn đặt của user
-  static async getByUserId(user_id) {
+  static async getByUserId(user_id, user_email = null) {
     const query = `
       SELECT b.*, p.name as pitch_name, p.location, 
-             t.date, t.start_time, t.end_time
+             b.booking_date as date, b.start_time, b.end_time
       FROM bookings b
       JOIN pitches p ON b.pitch_id = p.id
-      JOIN timeslots t ON b.timeslot_id = t.id
-      WHERE b.user_id = ?
+      WHERE (
+        b.user_id = ?
+        OR (? IS NOT NULL AND b.customer_email = ?)
+      )
       ORDER BY b.created_at DESC
     `;
-    
-    const [rows] = await db.execute(query, [user_id]);
+
+    const [rows] = await db.execute(query, [user_id, user_email, user_email]);
     return rows;
   }
 
@@ -89,27 +94,27 @@ class Booking {
       SELECT b.*, 
              u.full_name as user_name, u.phone as user_phone,
              p.name as pitch_name, p.location,
-             t.date, t.start_time, t.end_time
+             b.booking_date as date, b.start_time, b.end_time
       FROM bookings b
       JOIN users u ON b.user_id = u.id
       JOIN pitches p ON b.pitch_id = p.id
-      JOIN timeslots t ON b.timeslot_id = t.id
       ORDER BY b.created_at DESC
     `;
-    
+
     const [rows] = await db.execute(query);
     return rows;
   }
 
   // Cập nhật trạng thái đơn đặt
   static async updateStatus(id, status) {
-    const query = 'UPDATE bookings SET status = ? WHERE id = ?';
+    const query = "UPDATE bookings SET status = ? WHERE id = ?";
     await db.execute(query, [status, id]);
   }
 
   // Hủy đơn đặt
   static async cancel(id, cancellation_reason = null) {
-    const query = 'UPDATE bookings SET status = "cancelled", cancellation_reason = ? WHERE id = ?';
+    const query =
+      'UPDATE bookings SET status = "cancelled", cancellation_reason = ? WHERE id = ?';
     await db.execute(query, [cancellation_reason, id]);
   }
 

@@ -6,46 +6,85 @@ const StarRating = ({
   size = 20,
   color = "#ffc107",
   showNumber = true,
+  interactive = false,
+  onRatingChange,
 }) => {
+  const ratingValue = Number(rating) || 0;
   const stars = [];
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
 
-  // Render full stars
-  for (let i = 0; i < fullStars; i++) {
-    stars.push(
-      <FaStar
-        key={`full-${i}`}
-        size={size}
-        color={color}
-        style={{ marginRight: "2px" }}
-      />
-    );
-  }
+  const handlePick = (value) => {
+    if (!interactive) return;
+    if (typeof onRatingChange === "function") onRatingChange(value);
+  };
 
-  // Render half star
-  if (hasHalfStar) {
-    stars.push(
-      <FaStarHalfAlt
-        key="half"
-        size={size}
-        color={color}
-        style={{ marginRight: "2px" }}
-      />
-    );
-  }
+  const [hoverRating, setHoverRating] = React.useState(0);
+  const displayRating = interactive ? hoverRating || ratingValue : ratingValue;
 
-  // Render empty stars
-  const emptyStars = 5 - Math.ceil(rating);
-  for (let i = 0; i < emptyStars; i++) {
-    stars.push(
-      <FaRegStar
-        key={`empty-${i}`}
-        size={size}
-        color={color}
-        style={{ marginRight: "2px" }}
-      />
-    );
+  if (interactive) {
+    for (let i = 1; i <= 5; i++) {
+      const filled = i <= displayRating;
+      stars.push(
+        <span
+          key={i}
+          role="button"
+          tabIndex={0}
+          onClick={() => handlePick(i)}
+          onMouseEnter={() => setHoverRating(i)}
+          onMouseLeave={() => setHoverRating(0)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") handlePick(i);
+          }}
+          style={{
+            cursor: "pointer",
+            display: "inline-flex",
+            marginRight: "2px",
+          }}
+        >
+          {filled ? (
+            <FaStar size={size} color={color} />
+          ) : (
+            <FaRegStar size={size} color={color} />
+          )}
+        </span>
+      );
+    }
+  } else {
+    const fullStars = Math.floor(ratingValue);
+    const hasHalfStar = ratingValue % 1 >= 0.5;
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(
+        <FaStar
+          key={`full-${i}`}
+          size={size}
+          color={color}
+          style={{ marginRight: "2px" }}
+        />
+      );
+    }
+
+    if (hasHalfStar) {
+      stars.push(
+        <FaStarHalfAlt
+          key="half"
+          size={size}
+          color={color}
+          style={{ marginRight: "2px" }}
+        />
+      );
+    }
+
+    const emptyStars = 5 - Math.ceil(ratingValue);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <FaRegStar
+          key={`empty-${i}`}
+          size={size}
+          color={color}
+          style={{ marginRight: "2px" }}
+        />
+      );
+    }
   }
 
   return (
@@ -53,7 +92,7 @@ const StarRating = ({
       <div className="d-flex">{stars}</div>
       {showNumber && (
         <span className="ms-2 text-muted" style={{ fontSize: size * 0.8 }}>
-          ({rating.toFixed(1)})
+          ({(Number(displayRating) || 0).toFixed(1)})
         </span>
       )}
     </div>

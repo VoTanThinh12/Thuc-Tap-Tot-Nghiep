@@ -1,6 +1,14 @@
 const db = require("../config/database");
 
 class Review {
+  static async getByBookingAndUser(booking_id, user_id) {
+    const [rows] = await db.execute(
+      "SELECT * FROM reviews WHERE booking_id = ? AND user_id = ? LIMIT 1",
+      [booking_id, user_id]
+    );
+    return rows[0] || null;
+  }
+
   static async create(reviewData) {
     const { booking_id, user_id, pitch_id, rating, comment } = reviewData;
     const query = `
@@ -21,7 +29,7 @@ class Review {
     const offset = (page - 1) * limit;
     const query = `
       SELECT r.*, 
-             u.fullname as user_name, 
+             u.full_name as user_name, 
              u.email, 
              u.avatar,
              DATE_FORMAT(r.created_at, '%d/%m/%Y %H:%i') as formatted_date
@@ -61,7 +69,7 @@ class Review {
     }
     if (filters.search) {
       whereConditions.push(
-        "(u.fullname LIKE ? OR p.name LIKE ? OR r.comment LIKE ?)"
+        "(u.full_name LIKE ? OR p.name LIKE ? OR r.comment LIKE ?)"
       );
       const searchTerm = `%${filters.search}%`;
       queryParams.push(searchTerm, searchTerm, searchTerm);
@@ -74,7 +82,7 @@ class Review {
 
     const query = `
       SELECT r.*, 
-             u.fullname as user_name, 
+             u.full_name as user_name, 
              u.email,
              u.phone,
              p.name as pitch_name,
@@ -219,7 +227,7 @@ class Review {
   static async getById(id) {
     const query = `
       SELECT r.*, 
-             u.fullname as user_name,
+             u.full_name as user_name,
              u.email,
              u.phone,
              p.name as pitch_name,

@@ -95,6 +95,11 @@ class Pitch {
     await db.execute(query, [name, type, location, address, description, capacity, price_per_hour, status, id]);
   }
 
+  static async updateImages(id, images = []) {
+    const query = "UPDATE pitches SET images = ? WHERE id = ?";
+    await db.execute(query, [JSON.stringify(images || []), id]);
+  }
+
   // Xóa sân (soft delete)
   static async delete(id) {
     const query = 'UPDATE pitches SET status = "inactive" WHERE id = ?';

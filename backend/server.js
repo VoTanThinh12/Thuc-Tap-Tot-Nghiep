@@ -11,6 +11,10 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const timeslotsRoutes = require("./routes/timeslotsRoutes");
+const pitchImageRoutes = require("./routes/pitchImageRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
+
+const bootstrapSchema = require("./utils/schemaBootstrap");
 
 const app = express();
 
@@ -24,11 +28,13 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use("/api/pitches", pitchRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/pitch-images", pitchImageRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Đăng ký route
@@ -59,4 +65,5 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  bootstrapSchema();
 });

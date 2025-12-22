@@ -220,7 +220,7 @@ exports.createBooking = async (req, res) => {
 // Lấy đơn đặt của user
 exports.getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.getByUserId(req.user.id);
+    const bookings = await Booking.getByUserId(req.user.id, req.user.email);
     res.json({ success: true, bookings });
   } catch (error) {
     res.status(500).json({

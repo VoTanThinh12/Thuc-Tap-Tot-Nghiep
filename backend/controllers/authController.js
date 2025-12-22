@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const db = require('../config/database');
+const bcrypt = require('bcryptjs');
 
 // Đăng ký
 exports.register = async (req, res) => {
@@ -95,6 +97,49 @@ exports.updateProfile = async (req, res) => {
   try {
     await User.update(req.user.id, req.body);
     res.json({ message: 'Cập nhật thông tin thành công' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Đổi mật khẩu (client)
+exports.changePassword = async (req, res) => {
+  try {
+    const currentPassword = req.body.currentPassword || req.body.oldPassword;
+    const { newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: 'Thiếu mật khẩu hiện tại hoặc mật khẩu mới' });
+    }
+
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+    }
+
+    const userId = req.user?.id;
+    const [[user]] = await db.query(
+      'SELECT id, password FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = ? WHERE id = ?', [
+      hashedPassword,
+      userId,
+    ]);
+
+    res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }

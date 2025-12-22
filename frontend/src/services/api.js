@@ -2,6 +2,8 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000/api";
 
+export const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
+
 // Tạo instance axios
 const api = axios.create({
   baseURL: API_URL,
@@ -27,6 +29,12 @@ export const authAPI = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
   getProfile: () => api.get("/auth/profile"),
+  updateProfile: (data) => api.put("/auth/profile", data),
+  changePassword: (data) => api.post("/auth/change-password", data),
+};
+
+export const settingsAPI = {
+  getPublic: () => api.get("/settings"),
 };
 
 // Pitch API

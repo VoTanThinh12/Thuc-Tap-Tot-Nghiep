@@ -6,6 +6,15 @@ import { toast } from "react-toastify";
 import ReviewList from "../components/Reviews/ReviewList";
 import StarRating from "../components/Reviews/StarRating";
 import reviewService from "../services/reviewService";
+import ReviewForm from "../components/Reviews/ReviewForm";
+import { SERVER_URL } from "../services/api";
+
+function toAbsoluteImageUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/")) return `${SERVER_URL}${url}`;
+  return `${SERVER_URL}/${url}`;
+}
 
 const PitchDetailPage = () => {
   const { id } = useParams();
@@ -24,10 +33,21 @@ const PitchDetailPage = () => {
   const [reviewStats, setReviewStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
+  const [myBookings, setMyBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
+  const [selectedReviewBookingId, setSelectedReviewBookingId] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
+
   useEffect(() => {
     loadPitchDetail();
     loadReviewStats();
   }, [id]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadMyBookings();
+  }, [user, id]);
 
   useEffect(() => {
     if (bookingDate && pitch) {
@@ -55,12 +75,52 @@ const PitchDetailPage = () => {
     setLoadingStats(true);
     try {
       const response = await reviewService.getReviewsByPitch(id, 1, 1);
-      setReviewStats(response.data.stats);
+      setReviewStats(response.data?.data?.stats || null);
     } catch (error) {
       console.error("Error loading review stats:", error);
     } finally {
       setLoadingStats(false);
     }
+  };
+
+  const loadMyBookings = async () => {
+    setLoadingBookings(true);
+    try {
+      const response = await bookingAPI.getMyBookings();
+      setMyBookings(response.data.bookings || []);
+    } catch (error) {
+      console.error("Error loading my bookings:", error);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const eligibleBookings = myBookings.filter(
+    (b) => String(b.pitch_id) === String(id) && b.status === "completed"
+  );
+
+  const selectedReviewBooking = eligibleBookings.find(
+    (b) => String(b.id) === String(selectedReviewBookingId)
+  );
+
+  const handleOpenReviewModal = () => {
+    if (!user) {
+      toast.warning("Vui lòng đăng nhập để đánh giá");
+      navigate("/login");
+      return;
+    }
+
+    if (!selectedReviewBooking) {
+      toast.error("Vui lòng chọn booking đã hoàn thành để đánh giá");
+      return;
+    }
+
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSuccess = async () => {
+    await loadReviewStats();
+    setReviewRefreshKey((k) => k + 1);
   };
 
   // 🚀 TỰ TẠO TIMESLOTS TRÊN FRONTEND
@@ -97,9 +157,23 @@ const PitchDetailPage = () => {
       // Tạo timeslots
       const slots = generateTimeslots();
 
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(now.getDate()).padStart(2, "0")}`;
+      const isToday = String(bookingDate) === String(todayStr);
+
+      const visibleSlots = isToday
+        ? slots.filter((slot) => {
+            const startAt = new Date(`${bookingDate}T${slot.start_time}`);
+            return startAt.getTime() > now.getTime();
+          })
+        : slots;
+
       // Check từng slot xem có bị book chưa
       const checkedSlots = await Promise.all(
-        slots.map(async (slot) => {
+        visibleSlots.map(async (slot) => {
           try {
             const response = await bookingAPI.checkAvailability({
               pitch_id: parseInt(id),
@@ -121,6 +195,14 @@ const PitchDetailPage = () => {
       );
 
       setTimeslots(checkedSlots);
+      if (
+        selectedTimeslot &&
+        !checkedSlots.some(
+          (s) => String(s.start_time) === String(selectedTimeslot.start_time)
+        )
+      ) {
+        setSelectedTimeslot(null);
+      }
     } catch (error) {
       console.error("Error generating timeslots:", error);
       toast.error("Lỗi khi tải khung giờ");
@@ -224,7 +306,7 @@ const PitchDetailPage = () => {
           <img
             src={
               pitch.images && pitch.images[0]
-                ? pitch.images[0]
+                ? toAbsoluteImageUrl(pitch.images[0])
                 : "https://via.placeholder.com/600x400"
             }
             alt={pitch.name}
@@ -244,7 +326,10 @@ const PitchDetailPage = () => {
           {/* Hiển thị đánh giá trung bình */}
           {reviewStats && reviewStats.total_reviews > 0 && (
             <div className="mb-3">
-              <StarRating rating={reviewStats.average_rating || 0} size={20} />
+              <StarRating
+                rating={Number(reviewStats.average_rating) || 0}
+                size={20}
+              />
               <span className="ms-2 text-muted">
                 ({reviewStats.total_reviews} đánh giá)
               </span>
@@ -393,12 +478,83 @@ const PitchDetailPage = () => {
                 <i className="bi bi-star-fill text-warning me-2"></i>
                 Đánh giá & Nhận xét
               </h3>
+
+              {/* Form đánh giá (yêu cầu booking completed) */}
+              <div className="mb-4">
+                {!user ? (
+                  <div className="alert alert-info mb-0">
+                    Bạn cần đăng nhập để đánh giá.{" "}
+                    <button
+                      className="btn btn-sm btn-outline-primary ms-2"
+                      onClick={() => navigate("/login")}
+                    >
+                      Đăng nhập
+                    </button>
+                  </div>
+                ) : loadingBookings ? (
+                  <div className="text-muted">Đang tải booking...</div>
+                ) : eligibleBookings.length === 0 ? (
+                  <div className="alert alert-warning mb-0">
+                    Bạn chưa có booking <strong>hoàn thành</strong> cho sân này
+                    để đánh giá.
+                  </div>
+                ) : (
+                  <div className="row g-2 align-items-end">
+                    <div className="col-md-8">
+                      <label className="form-label">
+                        Chọn booking để đánh giá
+                      </label>
+                      <select
+                        className="form-select"
+                        value={selectedReviewBookingId}
+                        onChange={(e) =>
+                          setSelectedReviewBookingId(e.target.value)
+                        }
+                      >
+                        <option value="">-- Chọn booking --</option>
+                        {eligibleBookings.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.booking_code} |{" "}
+                            {new Date(b.date).toLocaleDateString("vi-VN")} |{" "}
+                            {b.start_time} - {b.end_time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <button
+                        className="btn btn-warning w-100"
+                        onClick={handleOpenReviewModal}
+                        disabled={!selectedReviewBookingId}
+                      >
+                        Đánh giá ngay
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <hr />
-              <ReviewList pitchId={id} />
+              <ReviewList key={`${id}-${reviewRefreshKey}`} pitchId={id} />
             </div>
           </div>
         </div>
       </div>
+
+      <ReviewForm
+        show={showReviewModal}
+        onHide={() => setShowReviewModal(false)}
+        booking={
+          selectedReviewBooking
+            ? {
+                id: selectedReviewBooking.id,
+                pitch_id: selectedReviewBooking.pitch_id,
+                pitch_name: selectedReviewBooking.pitch_name,
+              }
+            : null
+        }
+        onSuccess={handleReviewSuccess}
+      />
     </div>
   );
 };

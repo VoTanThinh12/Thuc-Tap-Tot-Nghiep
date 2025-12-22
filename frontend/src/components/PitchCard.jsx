@@ -1,5 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { SERVER_URL } from "../services/api";
+
+function toAbsoluteImageUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/")) return `${SERVER_URL}${url}`;
+  return `${SERVER_URL}/${url}`;
+}
 
 const PitchCard = ({ pitch }) => {
   return (
@@ -10,7 +18,7 @@ const PitchCard = ({ pitch }) => {
           <img
             src={
               pitch.images && pitch.images[0]
-                ? pitch.images[0]
+                ? toAbsoluteImageUrl(pitch.images[0])
                 : "https://via.placeholder.com/300x200"
             }
             className="card-img-top"
