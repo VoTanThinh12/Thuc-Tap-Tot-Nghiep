@@ -113,19 +113,29 @@ class Review {
 
   static async getAverageRating(pitch_id) {
     const query = `
-      SELECT 
-        COALESCE(ROUND(AVG(rating), 1), 0) as average_rating, 
-        COUNT(*) as total_reviews,
-        SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_star,
-        SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
-        SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
-        SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-        SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
-      FROM reviews
-      WHERE pitch_id = ?
-    `;
+    SELECT 
+      COALESCE(ROUND(AVG(rating), 1), 0) as average_rating, 
+      COALESCE(COUNT(*), 0) as total_reviews,
+      COALESCE(SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END), 0) as five_star,
+      COALESCE(SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END), 0) as four_star,
+      COALESCE(SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END), 0) as three_star,
+      COALESCE(SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END), 0) as two_star,
+      COALESCE(SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END), 0) as one_star
+    FROM reviews
+    WHERE pitch_id = ?
+  `;
     const [rows] = await db.execute(query, [pitch_id]);
-    return rows[0];
+
+    // Đảm bảo luôn trả về dữ liệu hợp lệ
+    return {
+      average_rating: rows[0]?.average_rating || 0,
+      total_reviews: rows[0]?.total_reviews || 0,
+      five_star: rows[0]?.five_star || 0,
+      four_star: rows[0]?.four_star || 0,
+      three_star: rows[0]?.three_star || 0,
+      two_star: rows[0]?.two_star || 0,
+      one_star: rows[0]?.one_star || 0,
+    };
   }
 
   static async checkUserReviewed(booking_id, user_id) {

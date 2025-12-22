@@ -1,49 +1,124 @@
 import React, { useState, useEffect } from "react";
-import { Card, Alert, Spinner, Button, Pagination } from "react-bootstrap";
+import { Card, Alert, Spinner, Pagination } from "react-bootstrap";
 import { FaUser } from "react-icons/fa";
+import axios from "axios";
 import StarRating from "./StarRating";
-import reviewService from "../../services/reviewService";
-import "./ReviewList.css";
 
 const ReviewList = ({ pitchId }) => {
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    loadReviews();
+    fetchReviews();
   }, [pitchId, currentPage]);
 
-  const loadReviews = async () => {
-    setLoading(true);
-    setError("");
-
+  const fetchReviews = async () => {
     try {
-      const response = await reviewService.getReviewsByPitch(
-        pitchId,
-        currentPage,
-        5
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.get(
+        `http://localhost:5000/api/reviews/pitch/${pitchId}?page=${currentPage}&limit=5`
       );
-      setReviews(response.data.reviews);
-      setStats(response.data.stats);
-      setTotalPages(response.data.totalPages);
+
+      if (response.data.success) {
+        setReviews(response.data.data.reviews || []);
+        setStats(
+          response.data.data.stats || {
+            average_rating: 0,
+            total_reviews: 0,
+            five_star: 0,
+            four_star: 0,
+            three_star: 0,
+            two_star: 0,
+            one_star: 0,
+          }
+        );
+        setTotalPages(response.data.data.totalPages || 1);
+      }
     } catch (err) {
-      setError("Không thể tải đánh giá");
+      console.error("Error fetching reviews:", err);
+      setError("Không thể tải đánh giá. Vui lòng thử lại sau.");
+      // Set default stats khi có lỗi
+      setStats({
+        average_rating: 0,
+        total_reviews: 0,
+        five_star: 0,
+        four_star: 0,
+        three_star: 0,
+        two_star: 0,
+        one_star: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const renderRatingBreakdown = () => {
+    if (!stats || stats.total_reviews === 0) {
+      return (
+        <div className="text-center text-muted py-3">Chưa có đánh giá nào</div>
+      );
+    }
+
+    const ratingBars = [
+      { star: 5, count: stats.five_star || 0 },
+      { star: 4, count: stats.four_star || 0 },
+      { star: 3, count: stats.three_star || 0 },
+      { star: 2, count: stats.two_star || 0 },
+      { star: 1, count: stats.one_star || 0 },
+    ];
+
+    return (
+      <div className="mb-4">
+        <div className="d-flex align-items-center mb-3">
+          <div className="text-center me-4">
+            <h2 className="mb-0">{stats.average_rating.toFixed(1)}</h2>
+            <StarRating
+              rating={stats.average_rating}
+              size={20}
+              showNumber={false}
+            />
+            <small className="text-muted">{stats.total_reviews} đánh giá</small>
+          </div>
+          <div className="flex-grow-1">
+            {ratingBars.map(({ star, count }) => {
+              const percentage =
+                stats.total_reviews > 0
+                  ? ((count / stats.total_reviews) * 100).toFixed(0)
+                  : 0;
+
+              return (
+                <div key={star} className="d-flex align-items-center mb-1">
+                  <span className="me-2" style={{ width: "30px" }}>
+                    {star} ⭐
+                  </span>
+                  <div
+                    className="progress flex-grow-1"
+                    style={{ height: "8px" }}
+                  >
+                    <div
+                      className="progress-bar bg-warning"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <span
+                    className="ms-2 text-muted"
+                    style={{ width: "40px", fontSize: "0.875rem" }}
+                  >
+                    {count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading && currentPage === 1) {
@@ -55,168 +130,110 @@ const ReviewList = ({ pitchId }) => {
     );
   }
 
-  if (error) {
-    return <Alert variant="danger">{error}</Alert>;
-  }
-
   return (
-    <div className="review-list">
-      {/* Thống kê tổng quan */}
-      {stats && stats.total_reviews > 0 && (
-        <Card className="mb-4">
-          <Card.Body>
-            <div className="row align-items-center">
-              <div className="col-md-4 text-center border-end">
-                <h1 className="display-4 mb-0 fw-bold text-warning">
-                  {stats.average_rating || 0}
-                </h1>
-                <StarRating rating={stats.average_rating || 0} size={24} />
-                <p className="text-muted mt-2">
-                  {stats.total_reviews} đánh giá
-                </p>
-              </div>
-              <div className="col-md-8">
-                <div className="rating-breakdown">
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count =
-                      stats[
-                        `${
-                          [
-                            "",
-                            "",
-                            "",
-                            "",
-                            "one",
-                            "two",
-                            "three",
-                            "four",
-                            "five",
-                          ][star]
-                        }_star`
-                      ] || 0;
-                    const percentage =
-                      stats.total_reviews > 0
-                        ? ((count / stats.total_reviews) * 100).toFixed(0)
-                        : 0;
+    <Card className="shadow-sm">
+      <Card.Body>
+        <h4 className="mb-4">Đánh giá & Nhận xét</h4>
 
-                    return (
-                      <div
-                        key={star}
-                        className="d-flex align-items-center mb-2"
-                      >
-                        <span className="me-2" style={{ minWidth: "60px" }}>
-                          {star} <FaStar color="#ffc107" size={14} />
-                        </span>
-                        <div
-                          className="progress flex-grow-1"
-                          style={{ height: "20px" }}
-                        >
+        {error && (
+          <Alert variant="warning" dismissible onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {renderRatingBreakdown()}
+
+        {reviews.length === 0 ? (
+          <div className="text-center text-muted py-4">
+            <p>Chưa có đánh giá nào cho sân này.</p>
+            <small>Hãy là người đầu tiên đánh giá!</small>
+          </div>
+        ) : (
+          <>
+            <div className="reviews-list">
+              {reviews.map((review) => (
+                <Card key={review.id} className="mb-3 border">
+                  <Card.Body>
+                    <div className="d-flex align-items-start">
+                      <div className="me-3">
+                        {review.avatar ? (
+                          <img
+                            src={review.avatar}
+                            alt={review.user_name}
+                            className="rounded-circle"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
                           <div
-                            className="progress-bar bg-warning"
-                            role="progressbar"
-                            style={{ width: `${percentage}%` }}
-                            aria-valuenow={percentage}
-                            aria-valuemin="0"
-                            aria-valuemax="100"
+                            className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                            style={{ width: "50px", height: "50px" }}
                           >
-                            {percentage}%
+                            <FaUser size={24} color="white" />
                           </div>
+                        )}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <div>
+                            <h6 className="mb-1">
+                              {review.user_name || "Người dùng"}
+                            </h6>
+                            <StarRating
+                              rating={review.rating}
+                              size={16}
+                              showNumber={false}
+                            />
+                          </div>
+                          <small className="text-muted">
+                            {review.formatted_date ||
+                              new Date(review.created_at).toLocaleDateString(
+                                "vi-VN"
+                              )}
+                          </small>
                         </div>
-                        <span
-                          className="ms-2 text-muted"
-                          style={{ minWidth: "40px" }}
-                        >
-                          ({count})
-                        </span>
+                        {review.comment && (
+                          <p className="mb-0 text-muted">{review.comment}</p>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
-      )}
-
-      {/* Danh sách đánh giá */}
-      <h5 className="mb-3">Đánh giá từ khách hàng</h5>
-
-      {reviews.length === 0 ? (
-        <Alert variant="info">
-          Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sân này!
-        </Alert>
-      ) : (
-        <>
-          {reviews.map((review) => (
-            <Card key={review.id} className="mb-3 review-card">
-              <Card.Body>
-                <div className="d-flex align-items-start">
-                  <div className="me-3">
-                    {review.avatar ? (
-                      <img
-                        src={review.avatar}
-                        alt={review.user_name}
-                        className="rounded-circle"
-                        width="50"
-                        height="50"
-                      />
-                    ) : (
-                      <div
-                        className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
-                        style={{ width: "50px", height: "50px" }}
-                      >
-                        <FaUser color="white" size={24} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <h6 className="mb-1">{review.user_name}</h6>
-                        <StarRating rating={review.rating} size={16} />
-                      </div>
-                      <small className="text-muted">
-                        {formatDate(review.created_at)}
-                      </small>
                     </div>
-                    {review.comment && (
-                      <p className="mb-0 text-muted">{review.comment}</p>
-                    )}
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          ))}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination>
-                <Pagination.Prev
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                />
-                {[...Array(totalPages)].map((_, index) => (
-                  <Pagination.Item
-                    key={index + 1}
-                    active={currentPage === index + 1}
-                    onClick={() => setCurrentPage(index + 1)}
-                  >
-                    {index + 1}
-                  </Pagination.Item>
-                ))}
-                <Pagination.Next
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                />
-              </Pagination>
+                  </Card.Body>
+                </Card>
+              ))}
             </div>
-          )}
-        </>
-      )}
-    </div>
+
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-4">
+                <Pagination>
+                  <Pagination.Prev
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  />
+                  {[...Array(totalPages)].map((_, i) => (
+                    <Pagination.Item
+                      key={i + 1}
+                      active={i + 1 === currentPage}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Pagination.Item>
+                  ))}
+                  <Pagination.Next
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  />
+                </Pagination>
+              </div>
+            )}
+          </>
+        )}
+      </Card.Body>
+    </Card>
   );
 };
 
