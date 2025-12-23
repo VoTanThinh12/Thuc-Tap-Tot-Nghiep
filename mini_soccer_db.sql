@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th12 22, 2025 lúc 08:51 AM
+-- Thời gian đã tạo: Th12 23, 2025 lúc 06:09 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -20,33 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Cơ sở dữ liệu: `mini_soccer_db`
 --
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `admins`
---
-
-CREATE TABLE `admins` (
-  `admin_id` int(11) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `full_name` varchar(100) NOT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `role` enum('super_admin','admin','manager') DEFAULT 'admin',
-  `status` enum('active','inactive') DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `last_login` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `admins`
---
-
-INSERT INTO `admins` (`admin_id`, `username`, `password`, `email`, `full_name`, `phone`, `role`, `status`, `created_at`, `last_login`) VALUES
-(1, 'admin', '$2a$10$xQZvK5YgKjX5h8JpL9vqKOqL5ZzW5nYJ5F.L5KqV5D5yZzW5nYJ5F', 'admin@soccerhub.com', 'Quản Trị Viên', '0901234567', 'super_admin', 'active', '2025-12-02 07:12:39', NULL),
-(2, 'manager', '$2a$10$xQZvK5YgKjX5h8JpL9vqKOqL5ZzW5nYJ5F.L5KqV5D5yZzW5nYJ5F', 'manager@soccerhub.com', 'Quản Lý', '0912345678', 'manager', 'active', '2025-12-02 07:12:39', NULL);
 
 -- --------------------------------------------------------
 
@@ -69,91 +42,40 @@ CREATE TABLE `bookings` (
   `customer_phone` varchar(15) NOT NULL,
   `customer_email` varchar(100) DEFAULT NULL,
   `notes` text DEFAULT NULL,
-  `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`services_json`)),
   `status` enum('pending','confirmed','completed','cancelled') DEFAULT 'pending',
   `cancellation_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`services_json`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `bookings`
 --
 
-INSERT INTO `bookings` (`id`, `booking_code`, `user_id`, `pitch_id`, `timeslot_id`, `booking_date`, `start_time`, `end_time`, `total_price`, `deposit_amount`, `customer_name`, `customer_phone`, `customer_email`, `notes`, `status`, `cancellation_reason`, `created_at`, `updated_at`) VALUES
-(1, 'BK001', 2, 1, 1, '2025-11-23', '06:00:00', '08:00:00', 150000.00, 50000.00, 'Nguyễn Văn A', '0912345678', 'nguyenvana@example.com', NULL, 'confirmed', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38'),
-(2, 'BK002', 3, 2, 14, '2025-11-23', '07:00:00', '09:00:00', 400000.00, 150000.00, 'Trần Thị B', '0923456789', 'tranthib@example.com', NULL, 'cancelled', NULL, '2025-11-23 14:05:38', '2025-12-04 15:01:27'),
-(3, 'BK003', 4, 1, 3, '2025-11-23', '10:00:00', '12:00:00', 120000.00, 0.00, 'Lê Văn C', '0934567890', 'levanc@example.com', NULL, 'completed', NULL, '2025-11-23 14:05:38', '2025-12-04 15:01:32'),
-(4, 'BK004', 5, 2, 17, '2025-11-23', '15:00:00', '17:00:00', 180000.00, 100000.00, 'Phạm Văn D', '0945678901', 'phamvand@example.com', NULL, 'completed', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38'),
-(5, 'BK005', 6, 1, 7, '2025-11-23', '20:00:00', '22:00:00', 130000.00, 0.00, 'Hoàng Thị E', '0956789012', 'hoangthie@example.com', NULL, 'cancelled', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38'),
-(6, 'BK1764254639545612', 7, 2, 2, '2025-11-28', '08:00:00', '10:00:00', 150000.00, 0.00, 'Thinh Vo', '0398989898', 'thinhverchai@gmail.com', NULL, 'cancelled', NULL, '2025-11-27 14:43:59', '2025-12-05 06:15:30'),
-(7, 'BK1764656936395788', 8, 3, 4, '2025-12-17', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '1@gmail.com', NULL, 'confirmed', NULL, '2025-12-02 06:28:56', '2025-12-04 15:01:24'),
-(8, 'BK1765185828293533', 11, 1, 1, '2025-12-25', '06:00:00', '08:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'cancelled', 'Khách hủy', '2025-12-08 09:23:48', '2025-12-08 09:57:00'),
-(9, 'BK17651878165261791', 11, 1, NULL, '2025-12-24', '16:00:00', '18:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'cancelled', NULL, '2025-12-08 09:56:56', '2025-12-22 02:16:29'),
-(10, 'BK17651878477879802', 11, 2, NULL, '2025-12-31', '16:00:00', '18:00:00', 200000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'completed', NULL, '2025-12-08 09:57:27', '2025-12-22 02:16:24'),
-(11, 'BK17662149423209920', 10, 1, NULL, '2025-12-26', '14:00:00', '16:00:00', 150000.00, 0.00, 'Admin Test', '0901234567', 'admin@test.com', NULL, 'completed', NULL, '2025-12-20 07:15:42', '2025-12-22 02:16:17'),
-(12, 'BK17663274719248031', 13, 1, NULL, '2025-12-21', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:31:11', '2025-12-22 02:16:15'),
-(13, 'BK17663274841309664', 13, 2, NULL, '2025-12-21', '16:00:00', '18:00:00', 200000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:31:24', '2025-12-21 14:31:55'),
-(14, 'BK17663280174193587', 13, 1, NULL, '2025-12-23', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:40:17', '2025-12-22 02:16:12'),
-(15, 'BK17663758263065367', 13, 1, NULL, '2025-12-25', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 03:57:06', '2025-12-22 03:57:33'),
-(16, 'BK17663759160595345', 13, 1, NULL, '2025-12-22', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'pending', NULL, '2025-12-22 03:58:36', '2025-12-22 03:58:36'),
-(17, 'BK17663787645493105', 13, 1, NULL, '2025-12-23', '18:00:00', '20:00:00', 180000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 04:46:04', '2025-12-22 04:47:06'),
-(18, 'BK17663880652717983', 13, 1, NULL, '2025-12-23', '20:00:00', '22:00:00', 180000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 07:21:05', '2025-12-22 07:24:00'),
-(19, 'BK17663887582451803', 13, 5, NULL, '2025-12-31', '14:00:00', '16:00:00', 130000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'pending', NULL, '2025-12-22 07:32:38', '2025-12-22 07:32:38');
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `booking_services`
---
-
-CREATE TABLE `booking_services` (
-  `id` int(11) NOT NULL,
-  `booking_id` int(11) NOT NULL,
-  `service_id` int(11) NOT NULL,
-  `quantity` int(11) NOT NULL DEFAULT 1,
-  `price` decimal(10,2) NOT NULL,
-  `total` decimal(10,2) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `booking_services`
---
-
-INSERT INTO `booking_services` (`id`, `booking_id`, `service_id`, `quantity`, `price`, `total`) VALUES
-(1, 1, 1, 2, 5000.00, 10000.00),
-(2, 1, 3, 10, 10000.00, 100000.00),
-(3, 2, 2, 1, 10000.00, 10000.00),
-(4, 2, 4, 5, 20000.00, 100000.00),
-(5, 4, 5, 1, 200000.00, 200000.00);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `payments`
---
-
-CREATE TABLE `payments` (
-  `id` int(11) NOT NULL,
-  `booking_id` int(11) NOT NULL,
-  `payment_method` enum('cash','transfer','momo','vnpay') DEFAULT 'cash',
-  `amount` decimal(10,2) NOT NULL,
-  `payment_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `transaction_id` varchar(100) DEFAULT NULL,
-  `status` enum('pending','completed','failed','refunded') DEFAULT 'pending',
-  `notes` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `payments`
---
-
-INSERT INTO `payments` (`id`, `booking_id`, `payment_method`, `amount`, `payment_date`, `transaction_id`, `status`, `notes`) VALUES
-(1, 1, 'cash', 150000.00, '2025-11-23 14:05:38', NULL, 'completed', NULL),
-(2, 2, 'transfer', 150000.00, '2025-11-23 14:05:38', 'TXN20250123001', 'completed', NULL),
-(3, 3, 'cash', 120000.00, '2025-11-23 14:05:38', NULL, 'completed', NULL),
-(4, 4, 'momo', 380000.00, '2025-11-23 14:05:38', 'MOMO20250123002', 'completed', NULL),
-(5, 5, 'cash', 0.00, '2025-11-23 14:05:38', NULL, 'refunded', NULL);
+INSERT INTO `bookings` (`id`, `booking_code`, `user_id`, `pitch_id`, `timeslot_id`, `booking_date`, `start_time`, `end_time`, `total_price`, `deposit_amount`, `customer_name`, `customer_phone`, `customer_email`, `notes`, `status`, `cancellation_reason`, `created_at`, `updated_at`, `services_json`) VALUES
+(1, 'BK001', 2, 1, 1, '2025-11-23', '06:00:00', '08:00:00', 150000.00, 50000.00, 'Nguyễn Văn A', '0912345678', 'nguyenvana@example.com', NULL, 'confirmed', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38', NULL),
+(2, 'BK002', 3, 2, 14, '2025-11-23', '07:00:00', '09:00:00', 400000.00, 150000.00, 'Trần Thị B', '0923456789', 'tranthib@example.com', NULL, 'cancelled', NULL, '2025-11-23 14:05:38', '2025-12-04 15:01:27', NULL),
+(3, 'BK003', 4, 1, 3, '2025-11-23', '10:00:00', '12:00:00', 120000.00, 0.00, 'Lê Văn C', '0934567890', 'levanc@example.com', NULL, 'completed', NULL, '2025-11-23 14:05:38', '2025-12-04 15:01:32', NULL),
+(4, 'BK004', 5, 2, 17, '2025-11-23', '15:00:00', '17:00:00', 180000.00, 100000.00, 'Phạm Văn D', '0945678901', 'phamvand@example.com', NULL, 'completed', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38', NULL),
+(5, 'BK005', 6, 1, 7, '2025-11-23', '20:00:00', '22:00:00', 130000.00, 0.00, 'Hoàng Thị E', '0956789012', 'hoangthie@example.com', NULL, 'cancelled', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38', NULL),
+(6, 'BK1764254639545612', 7, 2, 2, '2025-11-28', '08:00:00', '10:00:00', 150000.00, 0.00, 'Thinh Vo', '0398989898', 'thinhverchai@gmail.com', NULL, 'cancelled', NULL, '2025-11-27 14:43:59', '2025-12-05 06:15:30', NULL),
+(7, 'BK1764656936395788', 8, 3, 4, '2025-12-17', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '1@gmail.com', NULL, 'confirmed', NULL, '2025-12-02 06:28:56', '2025-12-04 15:01:24', NULL),
+(8, 'BK1765185828293533', 11, 1, 1, '2025-12-25', '06:00:00', '08:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'cancelled', 'Khách hủy', '2025-12-08 09:23:48', '2025-12-08 09:57:00', NULL),
+(9, 'BK17651878165261791', 11, 1, NULL, '2025-12-24', '16:00:00', '18:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'cancelled', NULL, '2025-12-08 09:56:56', '2025-12-22 02:16:29', NULL),
+(10, 'BK17651878477879802', 11, 2, NULL, '2025-12-31', '16:00:00', '18:00:00', 200000.00, 0.00, 'Thinh Vo', '123456789', '123123@123.123', NULL, 'completed', NULL, '2025-12-08 09:57:27', '2025-12-22 02:16:24', NULL),
+(11, 'BK17662149423209920', 10, 1, NULL, '2025-12-26', '14:00:00', '16:00:00', 150000.00, 0.00, 'Admin Test', '0901234567', 'admin@test.com', NULL, 'completed', NULL, '2025-12-20 07:15:42', '2025-12-22 02:16:17', NULL),
+(12, 'BK17663274719248031', 13, 1, NULL, '2025-12-21', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:31:11', '2025-12-22 02:16:15', NULL),
+(13, 'BK17663274841309664', 13, 2, NULL, '2025-12-21', '16:00:00', '18:00:00', 200000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:31:24', '2025-12-21 14:31:55', NULL),
+(14, 'BK17663280174193587', 13, 1, NULL, '2025-12-23', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-21 14:40:17', '2025-12-22 02:16:12', NULL),
+(15, 'BK17663758263065367', 13, 1, NULL, '2025-12-25', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 03:57:06', '2025-12-22 03:57:33', NULL),
+(16, 'BK17663759160595345', 13, 1, NULL, '2025-12-22', '14:00:00', '16:00:00', 150000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'pending', NULL, '2025-12-22 03:58:36', '2025-12-22 03:58:36', NULL),
+(17, 'BK17663787645493105', 13, 1, NULL, '2025-12-23', '18:00:00', '20:00:00', 180000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 04:46:04', '2025-12-22 04:47:06', NULL),
+(18, 'BK17663880652717983', 13, 1, NULL, '2025-12-23', '20:00:00', '22:00:00', 180000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 07:21:05', '2025-12-22 07:24:00', NULL),
+(19, 'BK17663887582451803', 13, 5, NULL, '2025-12-31', '14:00:00', '16:00:00', 130000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-22 07:32:38', '2025-12-23 03:50:06', NULL),
+(20, 'BK17663910747203844', 13, 2, NULL, '2025-12-22', '18:00:00', '20:00:00', 240000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'confirmed', NULL, '2025-12-22 08:11:14', '2025-12-22 08:11:24', NULL),
+(21, 'BK17664594005848668', 13, 7, NULL, '2025-12-25', '14:00:00', '16:00:00', 240000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-23 03:10:00', '2025-12-23 03:49:27', NULL),
+(29, 'BK17664659597955456', 13, 3, NULL, '2025-12-23', '20:00:00', '22:00:00', 164000.00, 0.00, 'Thinh Vo', '123456789', '123@gmail.com', NULL, 'completed', NULL, '2025-12-23 04:59:19', '2025-12-23 05:00:02', '[{\"service_id\":4,\"name\":\"Nước thể thao\",\"unit\":\"chai\",\"price\":20000,\"quantity\":1,\"total\":20000}]');
 
 -- --------------------------------------------------------
 
@@ -185,37 +107,16 @@ CREATE TABLE `pitches` (
 --
 
 INSERT INTO `pitches` (`id`, `name`, `type`, `location`, `address`, `description`, `capacity`, `price_per_hour`, `average_rating`, `total_reviews`, `images`, `facilities`, `status`, `image_url`, `created_at`, `updated_at`) VALUES
-(1, 'Sân bóng Thể Vinh', '5v5', 'Quận 1, TP HCM', '123 Đường Lê Lợi, Quận 1, TP HCM', 'Sân bóng mini chất lượng cao, được bảo dưỡng thường xuyên', 10, 150000.00, 4.5, 2, '[\"/uploads/pitch1_1.jpg\", \"/uploads/pitch1_2.jpg\"]', '[\"Bãi đỗ xe\", \"Nhà vệ sinh\", \"Quán nước\", \"Khu thay đồ\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-22 07:22:02'),
-(2, 'Sân bóng Kỹ Nguyễn', '7v7', 'Quận 3, TP HCM', '456 Đường Nguyễn Huệ, Quận 3, TP HCM', 'Sân cỏ nhân tạo chất lượng, ánh sáng đầy đủ', 14, 200000.00, 5.0, 1, '[\"/uploads/pitch2_1.jpg\", \"/uploads/pitch2_2.jpg\"]', '[\"Bãi đỗ xe\", \"Nhà vệ sinh\", \"Máy lạnh\", \"Wifi miễn phí\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-22 07:22:02'),
+(1, 'Sân bóng Thể Vinh', '5v5', 'Quận 1, TP HCM', '123 Đường Lê Lợi, Quận 1, TP HCM', 'Sân bóng mini chất lượng cao, được bảo dưỡng thường xuyên', 10, 150000.00, 5.0, 1, '[\"/uploads/pitch1_1.jpg\"]', '[\"Bãi đỗ xe\", \"Nhà vệ sinh\", \"Quán nước\", \"Khu thay đồ\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-22 09:04:01'),
+(2, 'Sân bóng Kỹ Nguyễn', '7v7', 'Quận 3, TP HCM', '456 Đường Nguyễn Huệ, Quận 3, TP HCM', 'Sân cỏ nhân tạo chất lượng, ánh sáng đầy đủ', 14, 200000.00, 5.0, 1, '[\"/uploads/pitch2_1.jpg\"]', '[\"Bãi đỗ xe\", \"Nhà vệ sinh\", \"Máy lạnh\", \"Wifi miễn phí\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-22 09:04:01'),
 (3, 'Sân bóng Bầu Trời', '5v5', 'Quận 7, TP HCM', '789 Đường Nguyễn Văn Linh, Quận 7, TP HCM', 'Sân trong nhà có mái che, tránh nắng mưa', 10, 120000.00, 0.0, 0, '[\"/uploads/pitch3_1.jpg\"]', '[\"Bãi đỗ xe\", \"Khu thay đồ\", \"Bóng đá\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38'),
-(4, 'Sân bóng Sao Vàng', '7v7', 'Bình Thạnh, TP HCM', '321 Đường Xô Viết Nghệ Tĩnh, Bình Thạnh, TP HCM', 'Sân tiêu chuẩn FIFA, có hệ thống tưới tự động', 14, 180000.00, 0.0, 0, '[\"/uploads/pitch4_1.jpg\", \"/uploads/pitch4_2.jpg\", \"/uploads/pitch4_3.jpg\"]', '[\"Bãi đỗ xe miễn phí\", \"Nhà vệ sinh\", \"Quán nước\", \"Wifi\", \"Camera an ninh\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-11-23 14:05:38'),
-(5, 'Sân bóng Phượng Hoàng', '5v5', 'Quận 10, TP HCM', '654 Đường 3 Tháng 2, Quận 10, TP HCM', 'Không gian rộng rãi, thoáng mát', 10, 130000.00, 0.0, 0, '[\"/uploads/pitch5_1.jpg\"]', '[\"Nhà vệ sinh\", \"Máy lạnh\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-08 09:15:14');
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `pitch_images`
---
-
-CREATE TABLE `pitch_images` (
-  `id` int(11) NOT NULL,
-  `pitch_id` int(11) NOT NULL,
-  `image_url` varchar(500) NOT NULL,
-  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
-  `sort_order` int(11) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `pitch_images`
---
-
-INSERT INTO `pitch_images` (`id`, `pitch_id`, `image_url`, `is_primary`, `sort_order`, `created_at`) VALUES
-(1, 1, '/uploads/pitch1_1.jpg', 1, 0, '2025-12-22 07:22:02'),
-(3, 2, '/uploads/pitch2_1.jpg', 1, 0, '2025-12-22 07:22:02'),
-(5, 3, '/uploads/pitch3_1.jpg', 1, 0, '2025-12-22 07:22:02'),
-(6, 4, '/uploads/pitch4_1.jpg', 1, 0, '2025-12-22 07:22:02'),
-(9, 5, '/uploads/pitch5_1.jpg', 1, 0, '2025-12-22 07:22:02');
+(4, 'Sân bóng Sao Vàng', '7v7', 'Bình Thạnh, TP HCM', '321 Đường Xô Viết Nghệ Tĩnh, Bình Thạnh, TP HCM', 'Sân tiêu chuẩn FIFA, có hệ thống tưới tự động', 14, 180000.00, 0.0, 0, '[\"/uploads/pitch4_1.jpg\"]', '[\"Bãi đỗ xe miễn phí\", \"Nhà vệ sinh\", \"Quán nước\", \"Wifi\", \"Camera an ninh\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-22 09:04:01'),
+(5, 'Sân bóng Phượng Hoàng', '5v5', 'Quận 10, TP HCM', '654 Đường 3 Tháng 2, Quận 10, TP HCM', 'Không gian rộng rãi, thoáng mát', 10, 130000.00, 0.0, 0, '[\"/uploads/pitch5_1.jpg\"]', '[\"Nhà vệ sinh\", \"Máy lạnh\"]', 'active', NULL, '2025-11-23 14:05:38', '2025-12-08 09:15:14'),
+(6, 'Sân bóng Hòa Bình', '5v5', 'Quận 3, TP HCM', '75 Đường 3 Tháng 2, Quận 3, TP HCM', 'Sân rộng, thoáng, có khu vực nghỉ và quầy nước.', 10, 170000.00, 0.0, 0, '[\"https://img.thegioithethao.vn/media/san-bong-da/ho-chi-minh/quan-binh-thanh/san-bong-da-mini-binh-minh/san-bong-da-mini-binh-minh-2.webp\"]', '[\"Quán nước\", \"Nhà vệ sinh\", \"Phòng tắm\", \"Wifi miễn phí\"]', 'active', NULL, '2025-12-22 01:55:00', '2025-12-22 09:27:59'),
+(7, 'Sân bóng Đại Dương', '7v7', 'Tân Bình, TP HCM', '82 Đường Lê Lợi, Tân Bình, TP HCM', 'Sân cỏ nhân tạo mới, ánh sáng tốt, phù hợp đá ban đêm.', 14, 240000.00, 0.0, 0, '[\"https://www.sanbongro.com.vn/sources/utils/timthumb.php?src=https://www.sanbongro.com.vn/uploads/supply/2019/01/10/lam_san_bong_da_11_nguoi_tiet_kiem.jpg&w=480&h=480&zc=2&a=t&wm=0\"]', '[\"Khu thay đồ\", \"Phòng tắm\", \"Bãi đỗ xe\", \"Wifi miễn phí\"]', 'active', NULL, '2025-12-22 01:55:00', '2025-12-23 05:01:12'),
+(8, 'Sân bóng Cỏ Xanh', '5v5', 'Quận 7, TP HCM', '783 Đường Điện Biên Phủ, Quận 7, TP HCM', 'Sân có mái che, chơi được cả khi mưa nhẹ.', 10, 170000.00, 0.0, 0, '[\"https://www.sanbongro.com.vn/uploads/supply/2019/01/07/thi_cong_san_bong_da_mini_5_nguoi_tiet_kiem.jpg\"]', '[\"Tủ giữ đồ\", \"Wifi miễn phí\", \"Bãi đỗ xe\", \"Máy lạnh\"]', 'active', NULL, '2025-12-22 01:55:00', '2025-12-23 05:02:59'),
+(9, 'Sân bóng Sunrise', '11v11', 'Quận 5, TP HCM', '764 Đường Phan Xích Long, Quận 5, TP HCM', 'Sân đạt chuẩn, mặt cỏ êm, ít chấn thương.', 22, 380000.00, 0.0, 0, '[\"https://anhsangthiendang.net/upload/images/GSLIGHTING/san%20bong%20da%20mini/Gi%C3%A1%20%C4%91%C3%A8n%20led%20s%C3%A2n%20b%C3%B3ng%20%C4%91%C3%A1%20mini%20%E2%80%93%20b%C3%A1o%20gi%C3%A1%20%C4%91%C3%A8n%20led%20d%C3%B9ng%20s%C3%A2n%20b%C3%B3ng%20%C4%91%C3%A1%20mini%201%20.jpg\"]', '[\"Quán nước\", \"Khu thay đồ\", \"Camera an ninh\", \"Bãi đỗ xe\"]', 'active', NULL, '2025-12-22 01:55:00', '2025-12-23 05:03:44'),
+(10, 'Sân bóng Riverside', '7v7', 'Quận 3, TP HCM', '439 Đường Nguyễn Huệ, Quận 3, TP HCM', 'Sân đạt chuẩn, mặt cỏ êm, ít chấn thương.', 14, 250000.00, 0.0, 0, '[\"/uploads/pitch10_1.jpg\",\"/uploads/pitch10_2.jpg\"]', '[\"Cho thuê giày\", \"Wifi miễn phí\", \"Bãi đỗ xe\", \"Camera an ninh\"]', 'active', NULL, '2025-12-22 01:55:00', '2025-12-22 09:04:01');
 
 -- --------------------------------------------------------
 
@@ -239,9 +140,8 @@ CREATE TABLE `reviews` (
 --
 
 INSERT INTO `reviews` (`id`, `booking_id`, `user_id`, `pitch_id`, `rating`, `comment`, `created_at`, `updated_at`) VALUES
-(1, 1, 2, 1, 5, 'Sân rất đẹp, chất lượng tốt, nhân viên nhiệt tình!', '2025-11-23 14:05:38', '2025-12-21 14:23:42'),
-(2, 3, 4, 1, 4, 'Sân ổn, giá hợp lý. Sẽ quay lại!', '2025-11-23 14:05:38', '2025-12-21 14:23:42'),
-(3, 4, 5, 2, 5, 'Sân chất lượng cao, không gian thoải mái, đặt lại chắc chắn.', '2025-11-23 14:05:38', '2025-12-21 14:23:42');
+(4, 18, 13, 1, 5, 'Sân đẹp', '2025-12-22 08:10:38', '2025-12-22 08:10:38'),
+(5, 13, 13, 2, 5, '', '2025-12-22 08:11:12', '2025-12-22 08:11:12');
 
 -- --------------------------------------------------------
 
@@ -292,12 +192,12 @@ CREATE TABLE `settings` (
 --
 
 INSERT INTO `settings` (`id`, `setting_key`, `setting_value`, `created_at`, `updated_at`) VALUES
-(1, 'business_name', 'SoccerHub - Sân Bóng Mini', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
+(1, 'business_name', 'Sân Bóng Mini', '2025-12-05 06:58:25', '2025-12-22 10:25:18'),
 (2, 'business_address', '123 Đường ABC, Quận 1, TP.HCM', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
 (3, 'business_phone', '0123456789', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
 (4, 'business_email', '2251120252@ut.edu.vn', '2025-12-05 06:58:25', '2025-12-05 07:00:03'),
-(5, 'business_description', 'Hệ thống sân bóng mini chất lượng cao', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
-(6, 'business_logo', 'https://nkclothing.sgp1.digitaloceanspaces.com/2025/07/18003827/logo-truong-dai-hoc-giao-thong-van-tai-tp-hcm-1.jpg', '2025-12-05 06:58:25', '2025-12-22 07:48:46'),
+(5, 'business_description', 'Võ Tấn Thịnh', '2025-12-05 06:58:25', '2025-12-22 10:16:35'),
+(6, 'business_logo', '', '2025-12-05 06:58:25', '2025-12-22 10:26:00'),
 (7, 'booking_slot_duration', '90', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
 (8, 'booking_open_time', '06:00', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
 (9, 'booking_close_time', '23:00', '2025-12-05 06:58:25', '2025-12-05 06:58:25'),
@@ -413,23 +313,6 @@ CREATE TABLE `v_admin_dashboard_stats` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_booking_details` (
-`id` int(11)
-,`booking_code` varchar(20)
-,`booking_date` date
-,`start_time` time
-,`end_time` time
-,`total_price` decimal(10,2)
-,`deposit_amount` decimal(10,2)
-,`status` enum('pending','confirmed','completed','cancelled')
-,`customer_name` varchar(100)
-,`customer_phone` varchar(15)
-,`user_name` varchar(100)
-,`user_email` varchar(100)
-,`pitch_name` varchar(100)
-,`pitch_type` enum('5v5','7v7','11v11')
-,`pitch_location` varchar(255)
-,`payment_method` enum('cash','transfer','momo','vnpay')
-,`payment_status` enum('pending','completed','failed','refunded')
 );
 
 -- --------------------------------------------------------
@@ -505,16 +388,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 
 --
--- Chỉ mục cho bảng `admins`
---
-ALTER TABLE `admins`
-  ADD PRIMARY KEY (`admin_id`),
-  ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `idx_username` (`username`),
-  ADD KEY `idx_email` (`email`);
-
---
 -- Chỉ mục cho bảng `bookings`
 --
 ALTER TABLE `bookings`
@@ -529,22 +402,6 @@ ALTER TABLE `bookings`
   ADD KEY `idx_status_date` (`status`,`booking_date`);
 
 --
--- Chỉ mục cho bảng `booking_services`
---
-ALTER TABLE `booking_services`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `service_id` (`service_id`),
-  ADD KEY `idx_booking_id` (`booking_id`);
-
---
--- Chỉ mục cho bảng `payments`
---
-ALTER TABLE `payments`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_booking_id` (`booking_id`),
-  ADD KEY `idx_status` (`status`);
-
---
 -- Chỉ mục cho bảng `pitches`
 --
 ALTER TABLE `pitches`
@@ -553,13 +410,6 @@ ALTER TABLE `pitches`
   ADD KEY `idx_location` (`location`),
   ADD KEY `idx_status` (`status`),
   ADD KEY `idx_name` (`name`);
-
---
--- Chỉ mục cho bảng `pitch_images`
---
-ALTER TABLE `pitch_images`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_pitch_images_pitch_id` (`pitch_id`);
 
 --
 -- Chỉ mục cho bảng `reviews`
@@ -611,46 +461,22 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT cho bảng `admins`
---
-ALTER TABLE `admins`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
 -- AUTO_INCREMENT cho bảng `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
-
---
--- AUTO_INCREMENT cho bảng `booking_services`
---
-ALTER TABLE `booking_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT cho bảng `payments`
---
-ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT cho bảng `pitches`
 --
 ALTER TABLE `pitches`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT cho bảng `pitch_images`
---
-ALTER TABLE `pitch_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `reviews`
 --
 ALTER TABLE `reviews`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `services`
@@ -686,25 +512,6 @@ ALTER TABLE `users`
 ALTER TABLE `bookings`
   ADD CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `booking_services`
---
-ALTER TABLE `booking_services`
-  ADD CONSTRAINT `booking_services_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `booking_services_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `payments`
---
-ALTER TABLE `payments`
-  ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `pitch_images`
---
-ALTER TABLE `pitch_images`
-  ADD CONSTRAINT `pitch_images_ibfk_1` FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `reviews`
