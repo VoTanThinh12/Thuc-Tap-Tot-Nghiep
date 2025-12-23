@@ -143,7 +143,9 @@ const ReviewManagement = () => {
             <FaStar className="text-warning me-2" />
             Quản lý đánh giá
           </h2>
-          <p className="text-muted">Xem, tìm kiếm và quản lý đánh giá của khách hàng</p>
+          <p className="text-muted">
+            Xem, tìm kiếm và quản lý đánh giá của khách hàng
+          </p>
         </Col>
       </Row>
 
@@ -382,7 +384,7 @@ const ReviewManagement = () => {
             className="admin-detail-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="admin-detail-modal-header">
+            <div className="modal-header">
               <h2>Chi tiết đánh giá #{selectedReview?.id}</h2>
               <button
                 className="admin-detail-modal-close"
@@ -396,60 +398,68 @@ const ReviewManagement = () => {
 
             <div className="admin-detail-modal-body no-scroll">
               {selectedReview && (
-                <div>
-                  <Row className="mb-3">
-                    <Col md={6}>
-                      <h6 className="text-muted">Khách hàng</h6>
-                      <p className="mb-0">
-                        <strong>{selectedReview.user_name}</strong>
-                        <br />
-                        <small className="text-muted">{selectedReview.email}</small>
-                      </p>
-                    </Col>
-                    <Col md={6}>
-                      <h6 className="text-muted">Sân bóng</h6>
-                      <p className="mb-0">
-                        <strong>{selectedReview.pitch_name}</strong>
-                      </p>
-                    </Col>
-                  </Row>
+                <div className="detail-section">
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <div className="detail-label">Khách hàng</div>
+                      <div className="detail-value">
+                        {selectedReview.user_name}
+                        <div className="text-muted" style={{ fontSize: 12 }}>
+                          {selectedReview.email}
+                        </div>
+                      </div>
+                    </div>
 
-                  <Row className="mb-3">
-                    <Col md={6}>
-                      <h6 className="text-muted">Đánh giá</h6>
-                      <StarRating rating={selectedReview.rating} size={24} />
-                    </Col>
-                    <Col md={6}>
-                      <h6 className="text-muted">Booking ID</h6>
-                      <p className="mb-0">#{selectedReview.booking_id}</p>
-                    </Col>
-                  </Row>
+                    <div className="detail-item">
+                      <div className="detail-label">Sân bóng</div>
+                      <div className="detail-value">
+                        {selectedReview.pitch_name}
+                      </div>
+                    </div>
 
-                  <Row className="mb-3">
-                    <Col>
-                      <h6 className="text-muted">Nhận xét</h6>
+                    <div className="detail-item">
+                      <div className="detail-label">Đánh giá</div>
+                      <div className="detail-value">
+                        <StarRating rating={selectedReview.rating} size={24} />
+                      </div>
+                    </div>
+
+                    <div className="detail-item">
+                      <div className="detail-label">Booking ID</div>
+                      <div className="detail-value">
+                        #{selectedReview.booking_id}
+                      </div>
+                    </div>
+
+                    <div className="detail-item full">
+                      <div className="detail-label">Nhận xét</div>
                       {selectedReview.comment ? (
                         <Card className="bg-light border-0">
                           <Card.Body>
-                            <p className="mb-0">{selectedReview.comment}</p>
+                            <div className="detail-value">
+                              {selectedReview.comment}
+                            </div>
                           </Card.Body>
                         </Card>
                       ) : (
-                        <p className="text-muted">Không có nhận xét</p>
+                        <div className="text-muted">Không có nhận xét</div>
                       )}
-                    </Col>
-                  </Row>
+                    </div>
 
-                  <Row>
-                    <Col md={6}>
-                      <h6 className="text-muted">Ngày tạo</h6>
-                      <p className="mb-0">{formatDate(selectedReview.created_at)}</p>
-                    </Col>
-                    <Col md={6}>
-                      <h6 className="text-muted">Cập nhật lần cuối</h6>
-                      <p className="mb-0">{formatDate(selectedReview.updated_at)}</p>
-                    </Col>
-                  </Row>
+                    <div className="detail-item">
+                      <div className="detail-label">Ngày tạo</div>
+                      <div className="detail-value">
+                        {formatDate(selectedReview.created_at)}
+                      </div>
+                    </div>
+
+                    <div className="detail-item">
+                      <div className="detail-label">Cập nhật lần cuối</div>
+                      <div className="detail-value">
+                        {formatDate(selectedReview.updated_at)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -972,7 +972,7 @@
 }
 
 .detail-section:first-child {
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
   border-radius: 0;
 }
 

@@ -211,6 +211,8 @@ body {
   background: var(--bg-card);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 .admin-layout .modal-header,
@@ -378,14 +380,14 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 20px;
+  padding: 40px;
 }
 
 .admin-detail-modal-content {
   background: var(--bg-card);
   border-radius: 20px;
-  width: 100%;
-  max-width: 600px;
+  width: 90%;
+  max-width: 800px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-light);
   overflow: hidden;
@@ -395,7 +397,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 28px;
+  padding: 32px 40px;
   border-bottom: 2px solid var(--border-color);
   background: var(--bg-secondary);
 }
@@ -431,7 +433,7 @@ body {
 }
 
 .admin-detail-modal-body {
-  padding: 28px;
+  padding: 36px 40px;
   overflow-x: hidden;
 }
 
@@ -443,9 +445,68 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 20px 28px;
   border-top: 2px solid var(--border-color);
   background: var(--bg-secondary);
+}
+
+.admin-detail-modal-body .detail-section {
+  padding: 0;
+  margin: 0;
+}
+
+.admin-detail-modal-body .detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  row-gap: 20px;
+}
+
+.admin-detail-modal-body .detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-detail-modal-body .detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.admin-detail-modal-body .detail-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-detail-modal-body .detail-value {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+@media (max-width: 576px) {
+  .admin-detail-modal-body .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-detail-modal-overlay {
+    padding: 20px;
+  }
+  .admin-detail-modal-header {
+    padding: 22px 20px;
+  }
+  .admin-detail-modal-body {
+    padding: 24px 20px;
+  }
+  .admin-detail-modal-footer {
+    padding: 18px 20px;
+  }
 }
 
 html:not([data-theme="light"]) .table,
@@ -463,7 +524,12 @@ html:not([data-theme="light"]) .my-bookings-page .table {
   border: 1px solid var(--border-color);
 }
 
-html:not([data-theme="light"]) .my-bookings-page .table > :not(caption) > * > * {
+html:not([data-theme="light"])
+  .my-bookings-page
+  .table
+  > :not(caption)
+  > *
+  > * {
   background-color: transparent;
   border-bottom-color: var(--border-color);
 }
@@ -479,11 +545,21 @@ html:not([data-theme="light"]) .my-bookings-page .table thead th {
   border-bottom-color: var(--border-color);
 }
 
-html:not([data-theme="light"]) .my-bookings-page .table-striped > tbody > tr:nth-of-type(odd) > * {
+html:not([data-theme="light"])
+  .my-bookings-page
+  .table-striped
+  > tbody
+  > tr:nth-of-type(odd)
+  > * {
   background: rgba(255, 255, 255, 0.03);
 }
 
-html:not([data-theme="light"]) .my-bookings-page .table-hover > tbody > tr:hover > * {
+html:not([data-theme="light"])
+  .my-bookings-page
+  .table-hover
+  > tbody
+  > tr:hover
+  > * {
   background: var(--bg-hover);
 }
 
