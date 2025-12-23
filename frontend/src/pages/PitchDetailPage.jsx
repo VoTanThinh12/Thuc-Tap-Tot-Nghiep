@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { pitchAPI, bookingAPI } from "../services/api";
+import { pitchAPI, bookingAPI, servicesAPI } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import ReviewList from "../components/Reviews/ReviewList";
@@ -29,6 +29,10 @@ const PitchDetailPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [checkingSlots, setCheckingSlots] = useState(false);
 
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [selectedServices, setSelectedServices] = useState({});
+
   // State cho đánh giá
   const [reviewStats, setReviewStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -45,6 +49,10 @@ const PitchDetailPage = () => {
   }, [id]);
 
   useEffect(() => {
+    loadServices();
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     loadMyBookings();
   }, [user, id]);
@@ -58,6 +66,12 @@ const PitchDetailPage = () => {
     }
   }, [bookingDate, pitch]);
 
+  useEffect(() => {
+    if (!selectedTimeslot) {
+      setSelectedServices({});
+    }
+  }, [selectedTimeslot]);
+
   const loadPitchDetail = async () => {
     try {
       const response = await pitchAPI.getById(id);
@@ -69,6 +83,68 @@ const PitchDetailPage = () => {
       setLoading(false);
     }
   };
+
+  const loadServices = async () => {
+    setLoadingServices(true);
+    try {
+      const res = await servicesAPI.getAll();
+      setServices(res.data?.services || []);
+    } catch (e) {
+      setServices([]);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const toggleService = (serviceId, checked) => {
+    setSelectedServices((prev) => {
+      const next = { ...(prev || {}) };
+      const key = String(serviceId);
+      if (!checked) {
+        delete next[key];
+        return next;
+      }
+      if (!next[key]) next[key] = 1;
+      return next;
+    });
+  };
+
+  const setServiceQty = (serviceId, qty) => {
+    setSelectedServices((prev) => {
+      const next = { ...(prev || {}) };
+      const key = String(serviceId);
+      const n = Number(qty);
+      if (!Number.isFinite(n) || n <= 0) {
+        delete next[key];
+        return next;
+      }
+      next[key] = Math.floor(n);
+      return next;
+    });
+  };
+
+  const selectedServiceItems = services
+    .filter((s) => selectedServices[String(s.id)])
+    .map((s) => {
+      const qty = Number(selectedServices[String(s.id)] || 0);
+      const price = Number(s.price || 0);
+      return {
+        id: s.id,
+        name: s.name,
+        unit: s.unit,
+        price,
+        quantity: qty,
+        total: price * qty,
+      };
+    });
+
+  const servicesTotalPrice = selectedServiceItems.reduce(
+    (sum, it) => sum + Number(it.total || 0),
+    0
+  );
+
+  const baseTimeslotPrice = Number(selectedTimeslot?.price || 0);
+  const finalTotalPrice = baseTimeslotPrice + servicesTotalPrice;
 
   // Load thống kê đánh giá
   const loadReviewStats = async () => {
@@ -246,6 +322,11 @@ const PitchDetailPage = () => {
       }
 
       // Submit booking
+      const selectedServicePayload = selectedServiceItems.map((s) => ({
+        service_id: Number(s.id),
+        quantity: Number(s.quantity || 0),
+      }));
+
       const bookingData = {
         pitch_id: parseInt(id),
         booking_date: bookingDate,
@@ -254,7 +335,7 @@ const PitchDetailPage = () => {
         total_price: selectedTimeslot.price,
         deposit_amount: 0,
         notes: "",
-        services: [], // Có thể thêm services sau
+        services: selectedServicePayload,
       };
 
       const response = await bookingAPI.create(bookingData);
@@ -435,8 +516,65 @@ const PitchDetailPage = () => {
                     <strong>Khung giờ đã chọn:</strong>{" "}
                     {selectedTimeslot.display_time}
                     <br />
-                    <strong>Giá:</strong>{" "}
+                    <strong>Giá sân:</strong>{" "}
                     {Number(selectedTimeslot.price).toLocaleString("vi-VN")} đ
+                    <br />
+                    <strong>Tổng dịch vụ:</strong>{" "}
+                    {Number(servicesTotalPrice).toLocaleString("vi-VN")} đ
+                    <br />
+                    <strong>Tổng cộng:</strong>{" "}
+                    {Number(finalTotalPrice).toLocaleString("vi-VN")} đ
+                  </div>
+                )}
+
+                {selectedTimeslot && (
+                  <div className="mb-3">
+                    <label className="form-label">Chọn dịch vụ (tùy chọn):</label>
+                    {loadingServices ? (
+                      <div className="text-muted small">Đang tải dịch vụ...</div>
+                    ) : services.length === 0 ? (
+                      <div className="text-muted small">Chưa có dịch vụ nào</div>
+                    ) : (
+                      <div className="border rounded p-2" style={{ maxHeight: 220, overflowY: "auto" }}>
+                        {services.map((s) => {
+                          const checked = Boolean(selectedServices[String(s.id)]);
+                          const qty = Number(selectedServices[String(s.id)] || 0);
+                          return (
+                            <div
+                              key={s.id}
+                              className="d-flex align-items-center justify-content-between gap-2 py-1"
+                            >
+                              <div className="d-flex align-items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => toggleService(s.id, e.target.checked)}
+                                />
+                                <div>
+                                  <div className="fw-semibold">{s.name}</div>
+                                  <div className="text-muted small">
+                                    {Number(s.price || 0).toLocaleString("vi-VN")} đ
+                                    {s.unit ? ` / ${s.unit}` : ""}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ width: 110 }}>
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  min={1}
+                                  value={checked ? qty : ""}
+                                  placeholder={checked ? "1" : "-"}
+                                  disabled={!checked}
+                                  onChange={(e) => setServiceQty(s.id, e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 

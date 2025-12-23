@@ -1,5 +1,15 @@
 const db = require("../config/database");
 
+function safeParseJsonArray(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 class Booking {
   // Tạo đơn đặt sân mới
   static async create(bookingData) {
@@ -118,26 +128,14 @@ class Booking {
     await db.execute(query, [cancellation_reason, id]);
   }
 
-  // Thêm dịch vụ vào booking
-  static async addService(booking_id, service_id, quantity, price) {
-    const total = quantity * price;
-    const query = `
-      INSERT INTO booking_services (booking_id, service_id, quantity, price, total)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-    await db.execute(query, [booking_id, service_id, quantity, price, total]);
-  }
-
-  // Lấy dịch vụ của booking
+  // Lấy dịch vụ của booking từ bookings.services_json
   static async getServices(booking_id) {
-    const query = `
-      SELECT bs.*, s.name as service_name, s.unit
-      FROM booking_services bs
-      JOIN services s ON bs.service_id = s.id
-      WHERE bs.booking_id = ?
-    `;
-    const [rows] = await db.execute(query, [booking_id]);
-    return rows;
+    const [rows] = await db.execute(
+      "SELECT services_json FROM bookings WHERE id = ? LIMIT 1",
+      [booking_id]
+    );
+    const row = rows[0] || null;
+    return safeParseJsonArray(row?.services_json);
   }
 }
 

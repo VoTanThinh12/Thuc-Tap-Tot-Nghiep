@@ -148,7 +148,6 @@ const ReviewManagement = () => {
           </p>
         </Col>
       </Row>
-
       {/* Statistics Cards */}
       <Row className="mb-4">
         <Col md={3}>
@@ -268,111 +267,127 @@ const ReviewManagement = () => {
       </Card>
 
       {/* Reviews Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Body className="p-0">
-          {filteredReviews.length === 0 ? (
-            <Alert variant="info" className="m-4">
-              Không tìm thấy đánh giá nào
-            </Alert>
-          ) : (
-            <>
-              <div className="table-responsive">
+      {/* <Card className="border-0 shadow-sm">
+        <Card.Body className="p-0"> */}
+      {filteredReviews.length === 0 ? (
+        <Alert variant="info" className="m-4">
+          Không tìm thấy đánh giá nào
+        </Alert>
+      ) : (
+        <>
+          {/* <div className="table-responsive">  
                 <Table hover className="mb-0">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>ID</th>
-                      <th>Khách hàng</th>
-                      <th>Sân bóng</th>
-                      <th>Đánh giá</th>
-                      <th>Nội dung</th>
-                      <th>Ngày tạo</th>
-                      <th className="text-center">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReviews.map((review) => (
-                      <tr key={review.id}>
-                        <td className="align-middle">#{review.id}</td>
-                        <td className="align-middle">
-                          <div>
-                            <strong>{review.user_name}</strong>
-                            <br />
-                            <small className="text-muted">{review.email}</small>
+                  <thead className="bg-light"> */}
+          <div className="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>KHÁCH HÀNG</th>
+                  <th>SÂN BÓNG</th>
+                  <th>ĐÁNH GIÁ</th>
+                  <th>NỘI DUNG</th>
+                  <th>NGÀY TẠO</th>
+                  <th className="text-center">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReviews.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="7"
+                      style={{ textAlign: "center", padding: "40px" }}
+                    >
+                      {searchTerm
+                        ? "Không tìm thấy đánh giá nào"
+                        : "Chưa có đánh giá nào"}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredReviews.map((review) => (
+                    <tr key={review.id}>
+                      <td className="align-middle">
+                        <strong>#{review.id}</strong>
+                      </td>
+                      <td className="align-middle">
+                        <div>
+                          <strong>{review.user_name}</strong>
+                          <br />
+                          <small className="text-muted">{review.email}</small>
+                        </div>
+                      </td>
+                      <td className="align-middle">
+                        <span>{review.pitch_name}</span>
+                      </td>
+                      <td className="align-middle">
+                        <StarRating rating={review.rating} size={16} />
+                      </td>
+                      <td className="align-middle">
+                        {review.comment ? (
+                          <div style={{ maxWidth: "300px" }}>
+                            {review.comment.length > 100
+                              ? `${review.comment.substring(0, 100)}...`
+                              : review.comment}
                           </div>
-                        </td>
-                        <td className="align-middle">{review.pitch_name}</td>
-                        <td className="align-middle">
-                          <StarRating rating={review.rating} size={16} />
-                        </td>
-                        <td className="align-middle">
-                          {review.comment ? (
-                            <div style={{ maxWidth: "300px" }}>
-                              {review.comment.length > 100
-                                ? `${review.comment.substring(0, 100)}...`
-                                : review.comment}
-                            </div>
-                          ) : (
-                            <span className="text-muted">
-                              Không có nhận xét
-                            </span>
-                          )}
-                        </td>
-                        <td className="align-middle">
-                          <small>{formatDate(review.created_at)}</small>
-                        </td>
-                        <td className="align-middle text-center">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => handleViewDetail(review)}
-                          >
-                            <FaEye /> Chi tiết
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDeleteClick(review)}
-                          >
-                            <FaTrash /> Xóa
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
+                        ) : (
+                          <span className="text-muted">Không có nhận xét</span>
+                        )}
+                      </td>
+                      <td className="align-middle">
+                        <small>{formatDate(review.created_at)}</small>
+                      </td>
+                      <td className="align-middle text-center">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleViewDetail(review)}
+                        >
+                          <FaEye /> Chi tiết
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteClick(review)}
+                        >
+                          <FaTrash /> Xóa
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-center py-3">
-                  <Pagination>
-                    <Pagination.Prev
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    />
-                    {[...Array(totalPages)].map((_, index) => (
-                      <Pagination.Item
-                        key={index + 1}
-                        active={currentPage === index + 1}
-                        onClick={() => setCurrentPage(index + 1)}
-                      >
-                        {index + 1}
-                      </Pagination.Item>
-                    ))}
-                    <Pagination.Next
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    />
-                  </Pagination>
-                </div>
-              )}
-            </>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-center py-3">
+              <Pagination>
+                <Pagination.Prev
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                />
+                {[...Array(totalPages)].map((_, index) => (
+                  <Pagination.Item
+                    key={index + 1}
+                    active={currentPage === index + 1}
+                    onClick={() => setCurrentPage(index + 1)}
+                  >
+                    {index + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            </div>
           )}
-        </Card.Body>
-      </Card>
+        </>
+      )}
 
       {/* Detail Modal */}
       {showDetailModal && (
@@ -384,7 +399,7 @@ const ReviewManagement = () => {
             className="admin-detail-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className="admin-detail-modal-header">
               <h2>Chi tiết đánh giá #{selectedReview?.id}</h2>
               <button
                 className="admin-detail-modal-close"
@@ -398,68 +413,66 @@ const ReviewManagement = () => {
 
             <div className="admin-detail-modal-body no-scroll">
               {selectedReview && (
-                <div className="detail-section">
-                  <div className="detail-grid">
-                    <div className="detail-item">
-                      <div className="detail-label">Khách hàng</div>
-                      <div className="detail-value">
-                        {selectedReview.user_name}
-                        <div className="text-muted" style={{ fontSize: 12 }}>
+                <div>
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <h6 className="text-muted">Khách hàng</h6>
+                      <p className="mb-0">
+                        <strong>{selectedReview.user_name}</strong>
+                        <br />
+                        <small className="text-muted">
                           {selectedReview.email}
-                        </div>
-                      </div>
-                    </div>
+                        </small>
+                      </p>
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Sân bóng</h6>
+                      <p className="mb-0">
+                        <strong>{selectedReview.pitch_name}</strong>
+                      </p>
+                    </Col>
+                  </Row>
 
-                    <div className="detail-item">
-                      <div className="detail-label">Sân bóng</div>
-                      <div className="detail-value">
-                        {selectedReview.pitch_name}
-                      </div>
-                    </div>
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <h6 className="text-muted">Đánh giá</h6>
+                      <StarRating rating={selectedReview.rating} size={24} />
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Booking ID</h6>
+                      <p className="mb-0">#{selectedReview.booking_id}</p>
+                    </Col>
+                  </Row>
 
-                    <div className="detail-item">
-                      <div className="detail-label">Đánh giá</div>
-                      <div className="detail-value">
-                        <StarRating rating={selectedReview.rating} size={24} />
-                      </div>
-                    </div>
-
-                    <div className="detail-item">
-                      <div className="detail-label">Booking ID</div>
-                      <div className="detail-value">
-                        #{selectedReview.booking_id}
-                      </div>
-                    </div>
-
-                    <div className="detail-item full">
-                      <div className="detail-label">Nhận xét</div>
+                  <Row className="mb-3">
+                    <Col>
+                      <h6 className="text-muted">Nhận xét</h6>
                       {selectedReview.comment ? (
                         <Card className="bg-light border-0">
                           <Card.Body>
-                            <div className="detail-value">
-                              {selectedReview.comment}
-                            </div>
+                            <p className="mb-0">{selectedReview.comment}</p>
                           </Card.Body>
                         </Card>
                       ) : (
-                        <div className="text-muted">Không có nhận xét</div>
+                        <p className="text-muted">Không có nhận xét</p>
                       )}
-                    </div>
+                    </Col>
+                  </Row>
 
-                    <div className="detail-item">
-                      <div className="detail-label">Ngày tạo</div>
-                      <div className="detail-value">
+                  <Row>
+                    <Col md={6}>
+                      <h6 className="text-muted">Ngày tạo</h6>
+                      <p className="mb-0">
                         {formatDate(selectedReview.created_at)}
-                      </div>
-                    </div>
-
-                    <div className="detail-item">
-                      <div className="detail-label">Cập nhật lần cuối</div>
-                      <div className="detail-value">
+                      </p>
+                    </Col>
+                    <Col md={6}>
+                      <h6 className="text-muted">Cập nhật lần cuối</h6>
+                      <p className="mb-0">
                         {formatDate(selectedReview.updated_at)}
-                      </div>
-                    </div>
-                  </div>
+                      </p>
+                    </Col>
+                  </Row>
                 </div>
               )}
             </div>

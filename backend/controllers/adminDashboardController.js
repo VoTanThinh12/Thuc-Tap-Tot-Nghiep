@@ -32,6 +32,60 @@ exports.getDashboardStats = async (req, res) => {
       LIMIT 10
     `);
 
+    const [bookingTrend] = await db.query(`
+      SELECT
+        DATE(d.day) as booking_date,
+        COALESCE(COUNT(b.id), 0) as total_bookings
+      FROM (
+        SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) AS day
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        UNION ALL SELECT CURDATE()
+      ) d
+      LEFT JOIN bookings b ON DATE(b.booking_date) = DATE(d.day)
+      GROUP BY DATE(d.day)
+      ORDER BY booking_date
+    `);
+
+    const [revenue7Days] = await db.query(`
+      SELECT
+        DATE(d.day) as booking_date,
+        COALESCE(SUM(CASE WHEN b.status IN ('confirmed', 'completed') THEN b.total_price ELSE 0 END), 0) as revenue
+      FROM (
+        SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) AS day
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY)
+        UNION ALL SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        UNION ALL SELECT CURDATE()
+      ) d
+      LEFT JOIN bookings b ON DATE(b.booking_date) = DATE(d.day)
+      GROUP BY DATE(d.day)
+      ORDER BY booking_date
+    `);
+
+    const [statusDistributionRows] = await db.query(`
+      SELECT status, COUNT(*) as total
+      FROM bookings
+      GROUP BY status
+    `);
+
+    const statusDistribution = {
+      pending: 0,
+      confirmed: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+    for (const row of statusDistributionRows) {
+      if (statusDistribution[row.status] !== undefined) {
+        statusDistribution[row.status] = Number(row.total || 0);
+      }
+    }
+
     res.json({
       success: true,
       stats: {
@@ -41,6 +95,11 @@ exports.getDashboardStats = async (req, res) => {
         monthRevenue: stats.monthRevenue || 0,
       },
       recentBookings: recentBookings,
+      charts: {
+        bookingTrend: bookingTrend,
+        revenue7Days: revenue7Days,
+        statusDistribution: statusDistribution,
+      },
     });
   } catch (error) {
     console.error("Error:", error);

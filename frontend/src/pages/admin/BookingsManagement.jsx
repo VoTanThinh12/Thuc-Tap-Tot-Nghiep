@@ -18,6 +18,8 @@ function BookingsManagement() {
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingDetail, setBookingDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -92,9 +94,19 @@ function BookingsManagement() {
   });
 
   // Xem chi tiết
-  const handleViewDetail = (booking) => {
+  const handleViewDetail = async (booking) => {
     setSelectedBooking(booking);
     setShowDetailModal(true);
+    setBookingDetail(null);
+    setLoadingDetail(true);
+    try {
+      const res = await adminAPI.getBookingDetails(booking.bookingId);
+      setBookingDetail(res.data || null);
+    } catch (e) {
+      setBookingDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   // Xác nhận đơn
@@ -314,14 +326,20 @@ function BookingsManagement() {
       {showDetailModal && selectedBooking && (
         <div
           className="modal-overlay"
-          onClick={() => setShowDetailModal(false)}
+          onClick={() => {
+            setShowDetailModal(false);
+            setBookingDetail(null);
+          }}
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Chi tiết đơn đặt sân</h2>
               <button
                 className="modal-close"
-                onClick={() => setShowDetailModal(false)}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setBookingDetail(null);
+                }}
               >
                 ✕
               </button>
@@ -428,6 +446,56 @@ function BookingsManagement() {
                   disabled
                   className="input-readonly input-price"
                 />
+              </div>
+
+              {/* Dịch vụ */}
+              <div className="form-group">
+                <label>Dịch vụ</label>
+                {loadingDetail ? (
+                  <div className="sub-text">Đang tải dịch vụ...</div>
+                ) : bookingDetail?.services && bookingDetail.services.length > 0 ? (
+                  <div className="table-responsive">
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: "8px 0" }}>
+                            Tên
+                          </th>
+                          <th style={{ textAlign: "right", padding: "8px 0" }}>
+                            SL
+                          </th>
+                          <th style={{ textAlign: "right", padding: "8px 0" }}>
+                            Giá
+                          </th>
+                          <th style={{ textAlign: "right", padding: "8px 0" }}>
+                            Thành tiền
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookingDetail.services.map((s, idx) => (
+                          <tr key={idx}>
+                            <td style={{ padding: "6px 0" }}>
+                              {s.name}
+                              {s.unit ? <span className="sub-text"> ({s.unit})</span> : null}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "6px 0" }}>
+                              {Number(s.quantity || 0)}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "6px 0" }}>
+                              {formatCurrency(Number(s.price || 0))}
+                            </td>
+                            <td style={{ textAlign: "right", padding: "6px 0" }}>
+                              {formatCurrency(Number(s.total || 0))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="sub-text">Không có dịch vụ</div>
+                )}
               </div>
 
               {/* Modal Footer */}

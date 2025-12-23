@@ -37,6 +37,11 @@ export const settingsAPI = {
   getPublic: () => api.get("/settings"),
 };
 
+export const servicesAPI = {
+  getAll: () => api.get("/services"),
+  getByCategory: (category) => api.get(`/services/category/${category}`),
+};
+
 // Pitch API
 export const pitchAPI = {
   getAll: () => api.get("/pitches"),
@@ -82,6 +87,7 @@ export const adminAPI = {
   // Bookings
   getBookings: (params) => api.get("/admin/bookings", { params }),
   getBookingStats: () => api.get("/admin/bookings/stats"),
+  getBookingDetails: (id) => api.get(`/admin/bookings/${id}`),
   updateBookingStatus: (id, status) =>
     api.put(`/admin/bookings/${id}/status`, { status }),
 

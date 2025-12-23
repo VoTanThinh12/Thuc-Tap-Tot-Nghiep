@@ -1,5 +1,15 @@
 const db = require("../config/database");
 
+function safeParseJsonArray(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 // Lấy tất cả bookings
 exports.getAllBookings = async (req, res) => {
   try {
@@ -146,9 +156,12 @@ exports.getBookingDetails = async (req, res) => {
       });
     }
 
+    const services = safeParseJsonArray(booking.services_json);
+
     res.json({
       success: true,
       booking: booking,
+      services: services,
     });
   } catch (error) {
     console.error("Error:", error);

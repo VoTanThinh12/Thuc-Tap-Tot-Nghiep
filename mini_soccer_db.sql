@@ -69,6 +69,7 @@ CREATE TABLE `bookings` (
   `customer_phone` varchar(15) NOT NULL,
   `customer_email` varchar(100) DEFAULT NULL,
   `notes` text DEFAULT NULL,
+  `services_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`services_json`)),
   `status` enum('pending','confirmed','completed','cancelled') DEFAULT 'pending',
   `cancellation_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

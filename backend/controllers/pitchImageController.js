@@ -1,11 +1,38 @@
-const PitchImage = require("../models/PitchImage");
+const db = require("../config/database");
 const Pitch = require("../models/Pitch");
 const upload = require("../middleware/upload");
 
-async function syncPitchImagesToPitchJson(pitch_id) {
-  const images = await PitchImage.getByPitchId(pitch_id);
-  const urls = images.map((img) => img.image_url);
-  await Pitch.updateImages(pitch_id, urls);
+function toImageObjects(pitch_id, urls = []) {
+  const pid = Number(pitch_id);
+  const list = Array.isArray(urls) ? urls : [];
+  return list.map((url, idx) => ({
+    id: `${pid}:${idx}`,
+    pitch_id: pid,
+    image_url: url,
+    is_primary: idx === 0 ? 1 : 0,
+    sort_order: idx,
+    created_at: null,
+  }));
+}
+
+function parseImageId(id) {
+  const raw = String(id || "");
+  const parts = raw.split(":");
+  if (parts.length !== 2) return null;
+  const pitch_id = Number(parts[0]);
+  const index = Number(parts[1]);
+  if (!Number.isFinite(pitch_id) || !Number.isFinite(index)) return null;
+  if (index < 0) return null;
+  return { pitch_id, index };
+}
+
+function moveItem(arr, fromIndex, toIndex) {
+  const list = Array.isArray(arr) ? [...arr] : [];
+  if (fromIndex < 0 || fromIndex >= list.length) return list;
+  const to = Math.max(0, Math.min(list.length - 1, toIndex));
+  const [item] = list.splice(fromIndex, 1);
+  list.splice(to, 0, item);
+  return list;
 }
 
 function normalizeImageUrl(imageUrl) {
@@ -32,7 +59,15 @@ class PitchImageController {
   static async getByPitch(req, res) {
     try {
       const { pitch_id } = req.params;
-      const images = await PitchImage.getByPitchId(pitch_id);
+      const pitch = await Pitch.findById(pitch_id);
+      if (!pitch) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy sân",
+        });
+      }
+
+      const images = toImageObjects(pitch_id, pitch.images || []);
       res.json({ success: true, data: images });
     } catch (error) {
       res.status(500).json({
@@ -98,26 +133,29 @@ class PitchImageController {
         });
       }
 
-      const existing = await PitchImage.getByPitchId(pitch_id);
-      const shouldBePrimary = Boolean(is_primary) || existing.length === 0;
+      const currentUrls = Array.isArray(pitch.images) ? [...pitch.images] : [];
+      const hasExisting = currentUrls.includes(normalizedUrl);
 
-      const id = await PitchImage.create({
-        pitch_id,
-        image_url: normalizedUrl,
-        is_primary: shouldBePrimary ? 1 : 0,
-        sort_order: existing.length,
-      });
+      const shouldBePrimary = Boolean(is_primary) || currentUrls.length === 0;
 
-      if (shouldBePrimary) {
-        await PitchImage.setPrimary(id);
+      let nextUrls = currentUrls;
+      if (!hasExisting) {
+        nextUrls = [...currentUrls, normalizedUrl];
       }
 
-      await syncPitchImagesToPitchJson(pitch_id);
+      const index = nextUrls.indexOf(normalizedUrl);
+      if (shouldBePrimary && index > 0) {
+        nextUrls = moveItem(nextUrls, index, 0);
+      }
+
+      await Pitch.updateImages(pitch_id, nextUrls);
+
+      const finalIndex = nextUrls.indexOf(normalizedUrl);
 
       res.status(201).json({
         success: true,
         message: "Thêm ảnh bằng link thành công",
-        data: { id, image_url: normalizedUrl },
+        data: { id: `${Number(pitch_id)}:${finalIndex}`, image_url: normalizedUrl },
       });
     } catch (error) {
       res.status(500).json({
@@ -131,11 +169,42 @@ class PitchImageController {
   // Admin: list all images (optional filter by pitch_id)
   static async getAll(req, res) {
     try {
-      const filters = {
-        pitch_id: req.query.pitch_id,
-      };
-      const images = await PitchImage.getAll(filters);
-      res.json({ success: true, data: images });
+      const pitchId = req.query.pitch_id;
+      if (pitchId) {
+        const pitch = await Pitch.findById(pitchId);
+        if (!pitch) {
+          return res.json({ success: true, data: [] });
+        }
+        const images = toImageObjects(pitchId, pitch.images || []).map((img) => ({
+          ...img,
+          pitch_name: pitch.name,
+          pitch_location: pitch.location,
+        }));
+        return res.json({ success: true, data: images });
+      }
+
+      const [pitches] = await db.query(
+        "SELECT id, name, location, images FROM pitches ORDER BY id ASC"
+      );
+
+      const allImages = [];
+      for (const p of pitches) {
+        let urls = [];
+        try {
+          urls = JSON.parse(p.images || "[]");
+        } catch (e) {
+          urls = [];
+        }
+
+        const rows = toImageObjects(p.id, urls).map((img) => ({
+          ...img,
+          pitch_name: p.name,
+          pitch_location: p.location,
+        }));
+        allImages.push(...rows);
+      }
+
+      res.json({ success: true, data: allImages });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -173,23 +242,14 @@ class PitchImageController {
 
       const imageUrl = `/uploads/${req.file.filename}`;
 
-      // If pitch has no images yet, make this primary
-      const existing = await PitchImage.getByPitchId(pitch_id);
-      const isPrimary = existing.length === 0;
-
-      const id = await PitchImage.create({
-        pitch_id,
-        image_url: imageUrl,
-        is_primary: isPrimary ? 1 : 0,
-        sort_order: existing.length,
-      });
-
-      await syncPitchImagesToPitchJson(pitch_id);
+      const currentUrls = Array.isArray(pitch.images) ? [...pitch.images] : [];
+      const nextUrls = [...currentUrls, imageUrl];
+      await Pitch.updateImages(pitch_id, nextUrls);
 
       res.status(201).json({
         success: true,
         message: "Upload ảnh thành công",
-        data: { id, image_url: imageUrl },
+        data: { id: `${Number(pitch_id)}:${nextUrls.length - 1}`, image_url: imageUrl },
       });
     } catch (error) {
       res.status(500).json({
@@ -204,22 +264,32 @@ class PitchImageController {
   static async setPrimary(req, res) {
     try {
       const { id } = req.params;
-      const image = await PitchImage.getById(id);
-      if (!image) {
-        return res.status(404).json({
+      const parsed = parseImageId(id);
+      if (!parsed) {
+        return res.status(400).json({
           success: false,
-          message: "Không tìm thấy ảnh",
+          message: "ID ảnh không hợp lệ",
         });
       }
-      const ok = await PitchImage.setPrimary(id);
-      if (!ok) {
+
+      const pitch = await Pitch.findById(parsed.pitch_id);
+      if (!pitch) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy sân",
+        });
+      }
+
+      const urls = Array.isArray(pitch.images) ? [...pitch.images] : [];
+      if (parsed.index >= urls.length) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy ảnh",
         });
       }
 
-      await syncPitchImagesToPitchJson(image.pitch_id);
+      const nextUrls = moveItem(urls, parsed.index, 0);
+      await Pitch.updateImages(parsed.pitch_id, nextUrls);
       res.json({ success: true, message: "Đặt ảnh chính thành công" });
     } catch (error) {
       res.status(500).json({
@@ -236,24 +306,40 @@ class PitchImageController {
       const { id } = req.params;
       const { sort_order } = req.body;
 
-      const image = await PitchImage.getById(id);
-      if (!image) {
+      const parsed = parseImageId(id);
+      if (!parsed) {
+        return res.status(400).json({
+          success: false,
+          message: "ID ảnh không hợp lệ",
+        });
+      }
+
+      const pitch = await Pitch.findById(parsed.pitch_id);
+      if (!pitch) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy sân",
+        });
+      }
+
+      const urls = Array.isArray(pitch.images) ? [...pitch.images] : [];
+      if (parsed.index >= urls.length || sort_order === undefined || sort_order === null) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy ảnh hoặc không có dữ liệu cập nhật",
         });
       }
 
-      const ok = await PitchImage.update(id, { sort_order });
-      if (!ok) {
-        return res.status(404).json({
+      const toIndex = Number(sort_order);
+      if (!Number.isFinite(toIndex)) {
+        return res.status(400).json({
           success: false,
-          message: "Không tìm thấy ảnh hoặc không có dữ liệu cập nhật",
+          message: "sort_order không hợp lệ",
         });
       }
 
-      await syncPitchImagesToPitchJson(image.pitch_id);
-
+      const nextUrls = moveItem(urls, parsed.index, toIndex);
+      await Pitch.updateImages(parsed.pitch_id, nextUrls);
       res.json({ success: true, message: "Cập nhật ảnh thành công" });
     } catch (error) {
       res.status(500).json({
@@ -268,31 +354,33 @@ class PitchImageController {
   static async delete(req, res) {
     try {
       const { id } = req.params;
-      const image = await PitchImage.getById(id);
-      if (!image) {
+
+      const parsed = parseImageId(id);
+      if (!parsed) {
+        return res.status(400).json({
+          success: false,
+          message: "ID ảnh không hợp lệ",
+        });
+      }
+
+      const pitch = await Pitch.findById(parsed.pitch_id);
+      if (!pitch) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy sân",
+        });
+      }
+
+      const urls = Array.isArray(pitch.images) ? [...pitch.images] : [];
+      if (parsed.index >= urls.length) {
         return res.status(404).json({
           success: false,
           message: "Không tìm thấy ảnh",
         });
       }
 
-      const ok = await PitchImage.delete(id);
-      if (!ok) {
-        return res.status(500).json({
-          success: false,
-          message: "Không thể xóa ảnh",
-        });
-      }
-
-      // If deleted primary, promote first remaining as primary
-      if (image.is_primary) {
-        const remaining = await PitchImage.getByPitchId(image.pitch_id);
-        if (remaining.length > 0) {
-          await PitchImage.setPrimary(remaining[0].id);
-        }
-      }
-
-      await syncPitchImagesToPitchJson(image.pitch_id);
+      urls.splice(parsed.index, 1);
+      await Pitch.updateImages(parsed.pitch_id, urls);
 
       res.json({ success: true, message: "Xóa ảnh thành công" });
     } catch (error) {

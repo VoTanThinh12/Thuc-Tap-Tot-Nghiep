@@ -2,6 +2,16 @@ const Booking = require("../models/Booking");
 const User = require("../models/User");
 const db = require("../config/database");
 
+function safeParseJsonArray(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 // CHECK AVAILABILITY - API MỚI
 exports.checkAvailability = async (req, res) => {
   try {
@@ -131,67 +141,99 @@ exports.createBooking = async (req, res) => {
     }
 
     // Tính tổng tiền
-    let finalTotalPrice = parseFloat(total_price);
-
-    // Tính tiền dịch vụ nếu có
+    const basePrice = parseFloat(total_price);
     let servicesTotal = 0;
+    const servicesSnapshot = [];
+
     if (services && Array.isArray(services) && services.length > 0) {
       for (const service of services) {
+        const serviceId = Number(service.service_id);
+        const quantity = Math.max(1, Number(service.quantity || 0));
+        if (!Number.isFinite(serviceId) || !Number.isFinite(quantity)) continue;
+
         const [serviceRows] = await connection.execute(
-          "SELECT price FROM services WHERE id = ?",
-          [service.service_id]
+          "SELECT id, name, price, unit FROM services WHERE id = ?",
+          [serviceId]
         );
-        if (serviceRows.length > 0) {
-          servicesTotal += parseFloat(serviceRows[0].price) * service.quantity;
-        }
+        if (serviceRows.length === 0) continue;
+
+        const s = serviceRows[0];
+        const price = parseFloat(s.price || 0);
+        const total = price * quantity;
+
+        servicesSnapshot.push({
+          service_id: s.id,
+          name: s.name,
+          unit: s.unit || null,
+          price,
+          quantity,
+          total,
+        });
+        servicesTotal += total;
       }
-      finalTotalPrice += servicesTotal;
     }
+
+    const finalTotalPrice = basePrice + servicesTotal;
 
     // Tạo booking
     const booking_code = "BK" + Date.now() + Math.floor(Math.random() * 10000);
-    const [result] = await connection.execute(
-      `INSERT INTO bookings (
-        booking_code, user_id, pitch_id, booking_date, 
-        start_time, end_time, total_price, deposit_amount,
-        customer_name, customer_phone, customer_email, notes, status
-      ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [
-        booking_code,
-        user_id,
-        pitch_id,
-        booking_date,
-        start_time,
-        end_time,
-        finalTotalPrice,
-        deposit_amount || 0,
-        user.full_name,
-        user.phone || "",
-        user.email,
-        notes || null,
-      ]
-    );
-
-    const booking_id = result.insertId;
-
-    // Thêm dịch vụ vào booking nếu có
-    if (services && Array.isArray(services) && services.length > 0) {
-      for (const service of services) {
-        const [serviceRows] = await connection.execute(
-          "SELECT price FROM services WHERE id = ?",
-          [service.service_id]
+    const servicesJson = JSON.stringify(servicesSnapshot);
+    let result;
+    try {
+      [result] = await connection.execute(
+        `INSERT INTO bookings (
+          booking_code, user_id, pitch_id, booking_date, 
+          start_time, end_time, total_price, deposit_amount,
+          customer_name, customer_phone, customer_email, notes, services_json, status
+        ) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [
+          booking_code,
+          user_id,
+          pitch_id,
+          booking_date,
+          start_time,
+          end_time,
+          finalTotalPrice,
+          deposit_amount || 0,
+          user.full_name,
+          user.phone || "",
+          user.email,
+          notes || null,
+          servicesJson,
+        ]
+      );
+    } catch (e) {
+      // Backward-compat if DB has not been migrated yet.
+      if (e && e.code === "ER_BAD_FIELD_ERROR") {
+        [result] = await connection.execute(
+          `INSERT INTO bookings (
+            booking_code, user_id, pitch_id, booking_date, 
+            start_time, end_time, total_price, deposit_amount,
+            customer_name, customer_phone, customer_email, notes, status
+          ) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          [
+            booking_code,
+            user_id,
+            pitch_id,
+            booking_date,
+            start_time,
+            end_time,
+            finalTotalPrice,
+            deposit_amount || 0,
+            user.full_name,
+            user.phone || "",
+            user.email,
+            notes || null,
+          ]
         );
-        if (serviceRows.length > 0) {
-          const price = parseFloat(serviceRows[0].price);
-          const total = price * service.quantity;
-          await connection.execute(
-            "INSERT INTO booking_services (booking_id, service_id, quantity, price, total) VALUES (?, ?, ?, ?, ?)",
-            [booking_id, service.service_id, service.quantity, price, total]
-          );
-        }
+      } else {
+        throw e;
       }
     }
+
+    const booking_id = result.insertId;
 
     await connection.commit();
 
@@ -242,9 +284,7 @@ exports.getBookingDetail = async (req, res) => {
       });
     }
 
-    // Lấy dịch vụ của booking
-    const services = await Booking.getServices(req.params.id);
-
+    const services = safeParseJsonArray(booking.services_json);
     res.json({ success: true, booking, services });
   } catch (error) {
     res.status(500).json({

@@ -49,7 +49,7 @@ function AdminDashboard() {
     const fetchData = async () => {
       try {
         const response = await adminAPI.getDashboardStats();
-        const { stats: s, recentBookings: bookings } = response.data;
+        const { stats: s, recentBookings: bookings, charts } = response.data;
 
         if (s) {
           const mappedStats = [
@@ -95,9 +95,85 @@ function AdminDashboard() {
             status: b.status,
           }));
           setRecentBookings(formattedBookings);
+        }
 
-          // Process data for charts
-          processChartData(bookings);
+        const trendRows = charts?.bookingTrend || [];
+        const revenueRows = charts?.revenue7Days || [];
+        const statusDist = charts?.statusDistribution || null;
+
+        if (trendRows && trendRows.length > 0) {
+          const labels = trendRows.map((r) =>
+            new Date(r.booking_date).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            })
+          );
+          const data = trendRows.map((r) => Number(r.total_bookings || 0));
+          setBookingTrendData({
+            labels,
+            datasets: [
+              {
+                label: "Số đơn đặt",
+                data,
+                borderColor: "rgb(59, 130, 246)",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          });
+        } else {
+          setBookingTrendData(null);
+        }
+
+        if (revenueRows && revenueRows.length > 0) {
+          const labels = revenueRows.map((r) =>
+            new Date(r.booking_date).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            })
+          );
+          const data = revenueRows.map((r) => Number(r.revenue || 0));
+          setRevenueChartData({
+            labels,
+            datasets: [
+              {
+                label: "Doanh thu (VNĐ)",
+                data,
+                backgroundColor: "rgba(245, 158, 11, 0.8)",
+                borderColor: "rgba(245, 158, 11, 1)",
+                borderWidth: 2,
+              },
+            ],
+          });
+        } else {
+          setRevenueChartData(null);
+        }
+
+        if (statusDist) {
+          setStatusChartData({
+            labels: ["Chờ xác nhận", "Đã xác nhận", "Hoàn thành", "Đã hủy"],
+            datasets: [
+              {
+                data: [
+                  Number(statusDist.pending || 0),
+                  Number(statusDist.confirmed || 0),
+                  Number(statusDist.completed || 0),
+                  Number(statusDist.cancelled || 0),
+                ],
+                backgroundColor: [
+                  "rgba(139, 92, 246, 0.8)",
+                  "rgba(34, 197, 94, 0.8)",
+                  "rgba(59, 130, 246, 0.8)",
+                  "rgba(239, 68, 68, 0.8)",
+                ],
+                borderWidth: 2,
+                borderColor: "#fff",
+              },
+            ],
+          });
+        } else {
+          setStatusChartData(null);
         }
       } catch (error) {
         console.error("Failed to load admin dashboard data", error);
@@ -106,103 +182,6 @@ function AdminDashboard() {
 
     fetchData();
   }, []);
-
-  const processChartData = (bookings) => {
-    // 1. Booking Trend (7 days)
-    const last7Days = [...Array(7)].map((_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return date.toISOString().split("T")[0];
-    });
-
-    const bookingCounts = last7Days.map(
-      (date) => bookings.filter((b) => b.booking_date === date).length
-    );
-
-    setBookingTrendData({
-      labels: last7Days.map((d) =>
-        new Date(d).toLocaleDateString("vi-VN", {
-          day: "2-digit",
-          month: "2-digit",
-        })
-      ),
-      datasets: [
-        {
-          label: "Số đơn đặt",
-          data: bookingCounts,
-          borderColor: "rgb(59, 130, 246)",
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          tension: 0.4,
-          fill: true,
-        },
-      ],
-    });
-
-    // 2. Revenue Chart (7 days)
-    const revenues = last7Days.map((date) =>
-      bookings
-        .filter(
-          (b) =>
-            b.booking_date === date &&
-            ["confirmed", "completed"].includes(b.status)
-        )
-        .reduce((sum, b) => sum + parseFloat(b.total_price || 0), 0)
-    );
-
-    setRevenueChartData({
-      labels: last7Days.map((d) =>
-        new Date(d).toLocaleDateString("vi-VN", {
-          day: "2-digit",
-          month: "2-digit",
-        })
-      ),
-      datasets: [
-        {
-          label: "Doanh thu (VNĐ)",
-          data: revenues,
-          backgroundColor: "rgba(245, 158, 11, 0.8)",
-          borderColor: "rgba(245, 158, 11, 1)",
-          borderWidth: 2,
-        },
-      ],
-    });
-
-    // 3. Status Distribution
-    const statusCount = {
-      pending: 0,
-      confirmed: 0,
-      completed: 0,
-      cancelled: 0,
-    };
-
-    bookings.forEach((b) => {
-      if (statusCount[b.status] !== undefined) {
-        statusCount[b.status]++;
-      }
-    });
-
-    setStatusChartData({
-      labels: ["Chờ xác nhận", "Đã xác nhận", "Hoàn thành", "Đã hủy"],
-      datasets: [
-        {
-          data: [
-            statusCount.pending,
-            statusCount.confirmed,
-            statusCount.completed,
-            statusCount.cancelled,
-          ],
-          backgroundColor: [
-            "rgba(139, 92, 246, 0.8)",
-            "rgba(34, 197, 94, 0.8)",
-            "rgba(59, 130, 246, 0.8)",
-            "rgba(239, 68, 68, 0.8)",
-          ],
-          borderWidth: 2,
-          borderColor: "#fff",
-        },
-      ],
-    });
-  };
 
   const handleStatClick = (link) => {
     if (link) {
